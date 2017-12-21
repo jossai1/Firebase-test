@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>title</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.17.0/codemirror.css" />
+    <link rel="stylesheet" href="https://cdn.firebase.com/libs/firepad/1.4.0/firepad.css" />
+    <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/2.5.1/firebaseui.css" />
+    <style>
+      html { height: 100%; }
+      body { margin: 0; height: 100%; position: relative; }
+      /* Height / width / positioning can be customized for your use case.
+       For demo purposes, we make firepad fill the entire browser. */
+      #firepad-container {
+         width: 100%;
+         height: 50%;
+         overflow-y: auto;
+       }
+
+       #current-caption {
+         width: 100%;
+         height: 40%;
+       }
+
+       .firepad {
+         width: 100%;
+         height:50%;
+         background-color: #f62;
+       }
+
+       .section {
+         width: 100%;
+         height:50%;
+       }
+    </style>
+
+    <style type="text/css">
+    .video-container * {
+        -webkit-box-sizing: content-box;
+        -moz-box-sizing: content-box;
+        box-sizing: content-box;
+      }
+      .video-container iframe, .video-container .nascent-player {
+        width: 100%;
+        height: 375px;
+      }
+    </style>
+  </head>
+  <body onload="startFirebase()">
+    <div id ="auth-container"></div>
+    <div id="firepad-container"></div>
+    <div id="video-container">
+      <div id="player"></div>
+      <div id="controls"></div>
+    </div>
+    <div id="current-caption"></div>
+
+    <script type="text/javascript" src="MediasitePlayerIFrameAPI.js"></script>
+    <script type="text/javascript" src="MediasitePlayerControls.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-auth.js"></script>
+
+    <!-- Code Mirror - the editor used in this page for firepad-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.17.0/codemirror.js"></script>
+
+    <!-- firebase ui -->
+    <script src="https://cdn.firebase.com/libs/firebaseui/2.5.1/firebaseui.js"></script>
+
+    <!-- Firepad -->
+    <script src="https://cdn.firebase.com/libs/firepad/1.4.0/firepad.min.js"></script>
+
+    <script type="text/javascript" src="index.js"></script>
+    <!--<script>
+
+      var url = "https://sofo.mediasite.com/Mediasite/Play/d64d7806bcc14f95a3c57633bcfd30c31d";
+      var player;
+      var controls;
+      var currentFirepad;
+      var editor;
+      //TODO: Make transcriptKey global instead of passing it around
+
+
+      // Initialize firebase so that database references can be made
+      function initialize() {
+
+        console.log("Init called");
+        var config = {
+          apiKey: "AIzaSyC_PcyEemJampMIHiefh94vw9eMpoaYDGI",
+          authDomain: "test-project-96190.firebaseapp.com",
+          databaseURL: "https://test-project-96190.firebaseio.com",
+          projectId: "test-project-96190",
+          storageBucket: "test-project-96190.appspot.com",
+          messagingSenderId: "807025189838"
+        };
+
+        firebase.initializeApp(config);
+
+        console.log("Firebase initialized");
+
+        console.log("Got firepad reference");
+
+        var uiConfig = {
+          signInSuccessUrl: '/',
+          signInOptions: [
+            // Leave the lines as is for the providers you want to offer your users.
+            firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+          ],
+          // Terms of service url.
+          tosUrl: 'google.com'
+        };
+
+        // Initialize the FirebaseUI Widget using Firebase.
+        //May need to make functon which calls firebase.auth
+        //and then loads the transcript
+        var ui = new firebaseui.auth.AuthUI(firebase.auth());
+        // The start method will wait until the DOM is loaded.
+        ui.start('#auth-container', uiConfig);
+
+        console.log("Getting the player reference");
+        getPlayerReference(start);
+      }
+
+      //TODO: Manage user IDs correctly here
+      function addFirePadElement(firepadRef, transcriptKey) {
+        var container = document.getElementById("firepad-container");
+        var divElement = document.createElement('div');
+        var spanElement = document.createElement('span');
+        divElement.setAttribute('id', firepadRef.key);
+        divElement.classList.add("section");
+        container.appendChild(divElement);
+        divElement.appendChild(spanElement);
+
+        addFirepadListeners(divElement, transcriptKey);
+
+        return divElement;
+      }
+
+      function addFirepadListeners(firepadElement, trancriptKey) {
+        var captionKey = firepadElement.id;
+        var ref = firebase.database().ref(
+          "/firepads/" + trancriptKey + "/" + captionKey);
+
+        ref.child("history").limitToLast(1).on('child_added', function(snapshot) {
+          var headless = Firepad.Headless(ref);
+          firepadElement.firstChild.innerHTML = headless.getText();
+          headless.dispose();
+        });
+      }
+
+      //Adds a caption entry to the database with a specific ID
+      function addCaption(caption, transcriptKey) {
+        var captionRef = firebase.database().ref("/captions/" + transcriptKey).push();
+        return captionRef.set({
+          time: caption.time,
+          endTime: caption.endTime
+        }).then(function () {
+          return captionRef.key;
+        });
+      }
+
+      function addFirePadRef(transcriptKey, captionKey, caption) {
+        var firepadRef = firebase.database().ref("/firepads/" + transcriptKey + "/" + captionKey);
+        var headless = Firepad.Headless(firepadRef);
+        headless.setText(caption.text);
+        headless.dispose();
+        return firepadRef;
+      }
+
+      //Gets the player, callback will be called when the video player loads,
+      //so that anything function involving the player's captions can be called
+      function getPlayerReference(callback) {
+        player = new Mediasite.Player( "player",
+          {
+            url: url + (url.indexOf("?") == -1 ? "?" : "&") + "player=MediasiteIntegration",
+            events: {
+                          "ready":   callback
+                    }
+          });
+
+        controls = new Mediasite.PlayerControls(player, "controls",
+          {
+            imageSprite: "url(MediasitePlayerControls.png)"
+          });
+      }
+
+      //Initializes a transcript for the first time, adds the neccessary objects
+      //to the database
+      function initializeTranscript() {
+        var transcriptKey = firebase.database().ref().push().key;
+        window.location = window.location + '#' + transcriptKey;
+
+        var captions = player.getCaptions();
+        captions = captions.slice(0,5);
+
+        for (var i = 0; i < captions.length; i++) {
+          var caption = captions[i];
+          addCaption(caption, transcriptKey).then(function(captionKey) {
+            console.log("printing caption key:")
+            return addFirePadRef(transcriptKey, captionKey, caption);
+          }).then(function(firepadRef) {
+            console.log("printing firepad reference " + firepadRef);
+            addFirePadElement(firepadRef, transcriptKey);
+          }).then(function() {
+            console.log("addingCaptionListener");
+            addCaptionListener(transcriptKey);
+          });
+        }
+      }
+
+      // Loads in Firepad elements for side menu in current TIME ORDER
+      function loadTranscript(transcriptKey) {
+          var captions = firebase.database().ref("/captions/" + transcriptKey).orderByChild("time");
+          captions.once('value').then(
+            function(snapshot) {
+              for (key in snapshot.val()) {
+                var firepadRef = addFirePadRef(firebase.database().ref("/firepads/"+ transcriptKey + "/" + key));
+                addFirePadElement(firepadRef, trancriptKey);
+              }
+              addCaptionListener(transcriptKey);
+          });
+      }
+
+      //Finds the hash in web url and either loads a transcript or creates a new one
+      //if there is no hash
+      function start() {
+        initializeCodeMirror();
+        var ref = firebase.database().ref("/captions/");
+        var hash = window.location.hash.replace(/#/g, '');
+        if (hash && checkExistence(ref.child(hash))) {
+          loadTranscript(hash);
+        }
+        else {
+          initializeTranscript();
+        }
+      }
+
+      function scrollToCaption(captionKey) {
+          var firepadContainer = document.getElementById("firepad-container");
+          var textBox = document.getElementById(captionKey);
+          var offset = textBox.offsetTop;
+          firepadContainer.scrollTop = offset;
+      }
+
+      //TODO: Add update to current caption here (postpone this for now)
+      function addCaptionListener(transcriptKey) {
+        console.log("called event adder");
+        player.addHandler("currenttimechanged", function(event) {
+          console.log("player time changed");
+          var id = findCaptionForTime(event.currentTime, transcriptKey).then(function(id) {
+            var ref = firebase.database().ref("/firepads/" + transcriptKey + "/" + id);
+            if(currentFirepad) {
+              currentFirepad.dispose();
+            }
+
+            currentFirepad = Firepad.fromCodeMirror(ref, editor, {richTextToolbar: false, richTextShortcuts: false});
+            scrollToCaption(id);
+          });
+        });
+      }
+
+      function initializeCodeMirror() {
+        editor = CodeMirror(document.getElementById("current-caption"), {linewrapping: true});
+      }
+
+      function findCaptionForTime(time, transcriptKey, callback) {
+        var ref = firebase.database().ref("/captions/" + transcriptKey);
+        return ref.orderByChild("endTime").endAt(time).limitToLast(1).once("value").then(function(snapshot) {
+            var id;
+            var snapshotValue = snapshot.val();
+            console.log("Should print snapshot here:")
+            console.log(snapshotValue);
+            for(key in snapshotValue) {
+              console.log("key found");
+              id = key;
+            }
+            return id;
+        });
+      }
+
+      //TODO: Deal with async via promises
+
+      //Checks if a hash exists in the firebase database
+      function checkExistence(dataRef) {
+        dataRef.once('value').then(function(snapshot) {
+          return (snapshot.val() !== null);
+        });
+      }
+
+    </script>-->
+  </body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "firebase-test-jane",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jossai1/Firebase-test.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jossai1/Firebase-test/issues"
+  },
+  "homepage": "https://github.com/jossai1/Firebase-test#readme",
+  "dependencies": {
+    "express": "^4.16.2"
+  },
+  "engines": {
+    "node": "6.10.2"
+  }
+}
