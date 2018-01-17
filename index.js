@@ -426,7 +426,7 @@ function secondsToHms(d) {
     m = ('00' + m).slice(-2);
     s = ('00' + s).slice(-2);
 
-    return (h+':'+m+':'+s+', '+ms);
+    return (h+':'+m+':'+s);
 }
 
 /**
