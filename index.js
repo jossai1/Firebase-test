@@ -549,11 +549,13 @@ function addDocumentListeners() {
     }
   }, false);
 
+  /* Hiding old collab popup
   $('.collabno').text(noUsers);
   $('.unhide.icon')
     .popup({
       popup: '.special.popup'
     });
+  */
 
 }
 
