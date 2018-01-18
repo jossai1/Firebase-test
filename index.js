@@ -275,7 +275,8 @@ function addTranscriptListener() {
   ref.on("value", function(count) {
     console.log("Current number of users: " + count.val());
     noUsers = count.val();
-    $('.collabno').text(noUsers);
+    //$('.collabno').text(noUsers);
+    $('.collabNumber').text("Collaborators: " + noUsers)
   });
 }
 
