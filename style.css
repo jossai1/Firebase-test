@@ -87,7 +87,7 @@ input.label-formatting {
   background-color: #e8e8e8;
 }
 
-input[type="email"], input[type="password"], input[type="text"] 
+input[type="email"], input[type="password"], input[type="text"]
 {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
@@ -106,3 +106,7 @@ input[type="email"], input[type="password"], input[type="text"]
     -o-user-select: none;
 }
 
+.firepad .powered-by-firepad {
+  display: none;
+  visibility: hidden;
+}

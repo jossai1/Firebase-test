@@ -162,7 +162,7 @@ function initTranscript() {
 
   var promiseArr = [];
   var captions = player.getCaptions();
-  //captions = captions.slice(0,5);
+  captions = captions.slice(1);
 
   for(var i = 0; i < captions.length; i++) {
     var caption = captions[i];
