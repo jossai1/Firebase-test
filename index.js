@@ -317,7 +317,7 @@ function createSectionEditorElement(values) {
 
     var sectionEditorElement = $('<div class="description" contentEditable="false"></div>');
     //var sectionEditorElement = $('<div class="description" contentEditable="false"></div>');
-    var spanElement = $('<p style="margin-top: 1%;margin-left: 2%;"></p>');
+    var spanElement = $('<p style="margin-top: 4%;margin-left: 2%;margin-bottom: 1%;"></p>');
     sectionEditorElement.append(spanElement);
 
     firebase.database().ref("/firepads/" + transcriptKey + "/" + values.captionKey + "/history").on(
