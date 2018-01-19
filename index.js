@@ -86,7 +86,7 @@ function startDatabase() {
       }
 
       else {
-        conole.log("in first else");
+        console.log("in first else");
         transcriptKey = ref.push().key;
         window.location.hash = window.location.hash + '#' + transcriptKey;
         //console.log("new window location: " + window.location.split('#')[0] + '#' + transcriptKey);
