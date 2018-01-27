@@ -61,6 +61,9 @@ function startFirebase() {
 
 function initializeCodeMirror() {
   editor = CodeMirror(document.getElementById("current-caption"), {linewrapping: true});
+  editor.setOption("extraKeys", {
+    "Shift-Backspace": function(cm) {}
+  });
 }
 
 function getPlayerReference(callback) {
