@@ -370,7 +370,7 @@ function createSectionTimeStampElement(time) {
     var sectionTimestampElement = $('<div class="ui top left attached label"><input class="label-formatting" placeholder="Speaker" type="text" size="10" maxlength="16" class="section-timestamp" value="' + formatStartTime(time) + '" disabled /></div>');
     sectionTimestampElement.click(function() {
       setPlayerTime(time);
-      console.logs("click");
+      console.log("click");
     });
     //var sectionTimestampElement = $("<div class='ui top left attached label'>"+time+"</div>");
     return sectionTimestampElement;
