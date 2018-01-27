@@ -17,6 +17,13 @@ var playKeyDown = false;
 var playing = false;
 var noUsers;
 
+//NEW GLOBALS FOR BACKSPACE + SHIFT
+var scheduledStop = false;
+var scheduledTime;
+var startBarrier;
+var stopMade = false;
+var stopTime;
+
 function startFirebase() {
   var config = {
     apiKey: "AIzaSyC_PcyEemJampMIHiefh94vw9eMpoaYDGI",
@@ -63,7 +70,7 @@ function getPlayerReference(callback) {
       url: url + (url.indexOf("?") == -1 ? "?" : "&") + "player=MediasiteIntegration",
       events: {
                     "ready":   callback,
-                    "playstatechanged": updatePlayingState
+                    "playstatechanged": function(e) {updatePlayingState(e);}
               }
     });
 
@@ -207,30 +214,86 @@ function makeElements(values) {
 
 function timeChangedListener() {
   player.addHandler("currenttimechanged", function(event) {
-    var id;
-    firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(event.currentTime).limitToLast(1).once("value")
-      .then(function(snapshot) {
-        for (keys in snapshot.val()) {
-          id = keys;
-        }
-        if(id != null && id != currentID) {
-          var firepadRef = firebase.database().ref("/firepads/" + transcriptKey + "/" + id);
+    //console.log("time changed event");
 
-          if(currentFirepad) {
-            currentFirepad.dispose();
-            editor.setValue("");
-            editor.clearHistory();
-            var cmelement = document.getElementsByClassName('CodeMirror')[0];
-            var ccelement = document.getElementById("current-caption");
-            ccelement.removeChild(cmelement);
+    // SHIFT + BACKSPACE LOGIC
+    epsilon = 0.5;
+    if (scheduledStop) {
+      //console.log("A stop is scheduled");
+      if (event.currentTime >= scheduledTime && event.currentTime <= scheduledTime + epsilon) {
+        //console.log("Stop triggered");
+        scheduledStop = false;
+        stopMade = true;
+        //setPlayerTime(scheduledTime);
+        if (playing) {
+          togglePlayPause();
+          console.log("has playing updated?");
+          console.log(playing);
+          console.log("has play state updated?");
+          console.log(player.getPlayState());
+        }
+
+        stopTime = getPlayerTime();
+
+        console.log("Stopped at: ");
+        console.log(stopTime);
+
+        console.log("Pausing test...");
+        console.log(getPlayerTime());
+        console.log(getPlayerTime());
+      }
+
+      //The user has moved outside the caption time slot before the scheduled stop time
+      else if(event.currentTime > scheduledTime + epsilon) {
+        scheduledStop = false;
+      }
+
+      else if(event.currentTime < startBarrier) {
+        scheduledStop = false;
+      }
+    }
+
+    //If the player time has moved since the last stop then unlock the firepad caption box
+    if (stopTime + epsilon < getPlayerTime() && stopMade) {
+      stopMade = false;
+      console.log("Undoing stop at: ");
+      console.log(getPlayerTime());
+    }
+
+    else if(stopTime > getPlayerTime() && stopMade) {
+      stopMade = false;
+      console.log("Undoing stop at: ");
+      console.log(getPlayerTime());
+    }
+
+    if (!stopMade) {
+      var id;
+      firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(event.currentTime).limitToLast(1).once("value")
+        .then(function(snapshot) {
+          for (keys in snapshot.val()) {
+            id = keys;
           }
+          if(id != null && id != currentID) {
+            var firepadRef = firebase.database().ref("/firepads/" + transcriptKey + "/" + id);
 
-          initializeCodeMirror();
-          currentFirepad = Firepad.fromCodeMirror(firepadRef, editor, {richTextToolbar:false, richTextShortcuts:false});
-          currentID = id;
-          scrollToSection(id);
-        }
-      });
+            if(currentFirepad) {
+              currentFirepad.dispose();
+              editor.setValue("");
+              editor.clearHistory();
+              var cmelement = document.getElementsByClassName('CodeMirror')[0];
+              var ccelement = document.getElementById("current-caption");
+              ccelement.removeChild(cmelement);
+            }
+
+            initializeCodeMirror();
+            currentFirepad = Firepad.fromCodeMirror(firepadRef, editor, {richTextToolbar:false, richTextShortcuts:false});
+            //poweredBy = document.getElementsByClassName('powered-by-firepad')
+            //poweredBy[0].style.display = 'none';
+            currentID = id;
+            scrollToSection(id);
+          }
+        });
+    }
   });
 }
 
@@ -305,6 +368,10 @@ function formatStartTime(startTime) {
 function createSectionTimeStampElement(time) {
     //var sectionTimestampElement = $('<input type="text" size="12" maxlength="16" class="section-timestamp" value="' + formatStartTime(section.startTime) + '" />'); - to enable editing remove the disabled property HERE
     var sectionTimestampElement = $('<div class="ui top left attached label"><input class="label-formatting" placeholder="Speaker" type="text" size="10" maxlength="16" class="section-timestamp" value="' + formatStartTime(time) + '" disabled /></div>');
+    sectionTimestampElement.click(function() {
+      setPlayerTime(time);
+      console.logs("click");
+    });
     //var sectionTimestampElement = $("<div class='ui top left attached label'>"+time+"</div>");
     return sectionTimestampElement;
 }
@@ -358,14 +425,18 @@ function createSectionElement(values){
 
 // Needs to be set to true as event triggers when the player first loads
 // Could be more lightweight maybe?
+// Needs to be set to true as event triggers when the player first loads
+// Could be more lightweight maybe?
 function updatePlayingState(eventData) {
-    //playing = !playing;
-    console.log("play state changed");
+    console.log("PLAY STATE CHANGED");
     state = eventData.playState;
     if (state == "playing") {
+      console.log("Changed to playing");
       playing = true;
+      stopMade = false;
     }
     else {
+      console.log("Changed to paused");
       playing = false;
     }
 }
@@ -374,6 +445,7 @@ function togglePlayPause() {
     if(playing) {
         player.pause();
     } else {
+        stopMade = false;
         player.play();
     }
 }
@@ -453,9 +525,32 @@ function hmsToSeconds(timestamp) {
 
 function addDocumentListeners() {
   document.addEventListener("keydown", function (event) {
-      if (event.keyCode == 37 && event.shiftKey) {
-          event.preventDefault();
+    if (event.keyCode == 37 && event.shiftKey) {
+        event.preventDefault();
 
+        if(stopMade) {
+          console.log("stop made");
+          console.log(currentID);
+          firebase.database().ref("/captions/" + transcriptKey + "/" + currentID).once("value")
+            .then(function(snapshot) {
+              value = snapshot.val();
+              return value.time;
+            })
+            .then(function(time) {
+              return firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(time)
+                .limitToLast(2).once("value").then(function(snapshot) {
+                  var value2 = snapshot.val();
+                  var i = 0;
+                  for (key in value2) {
+                    return value2[key].time;
+                  }
+                });
+            }).then(function (time) {
+              setPlayerTime(time);
+            });
+        }
+
+        else {
           firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(getPlayerTime())
           .limitToLast(2).once("value").then(function (snapshot) {
             var value = snapshot.val();
@@ -466,10 +561,48 @@ function addDocumentListeners() {
           }).then(function(time) {
               setPlayerTime(time);
           });
+        }
+    }
+
+    if (event.keyCode == 39 && event.shiftKey) {
+      event.preventDefault();
+
+      if(stopMade) {
+        firebase.database().ref("/captions/" + transcriptKey + "/" + currentID).once("value")
+          .then(function(snapshot) {
+            value = snapshot.val();
+            return value.time;
+          })
+          .then(function(time) {
+            return firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").startAt(time)
+              .limitToFirst(2).once("value").then(function(snapshot) {
+                var value2 = snapshot.val();
+                var numKeys = Object.keys(value).length;
+                var count = 1;
+                if(numKeys == 2) {
+                  for (key in value2) {
+                    if (count == 2) {
+                      return value2[key].time;
+                    }
+
+                    else {
+                      count++;
+                    }
+                  }
+                }
+
+                else {
+                  for (key in value2) {
+                    return value2[key].time;
+                  }
+                }
+              });
+          }).then(function (time) {
+            setPlayerTime(time);
+          });
       }
 
-      if (event.keyCode == 39 && event.shiftKey) {
-        event.preventDefault();
+      else {
         firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").startAt(getPlayerTime())
         .limitToFirst(2).once("value").then(function(snapshot) {
           var value = snapshot.val();
@@ -496,50 +629,73 @@ function addDocumentListeners() {
           setPlayerTime(time);
         });
       }
+    }
 
-      //
-      if (event.keyCode == 8 && event.shiftKey) {
-        event.preventDefault();
-        firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(getPlayerTime()).limitToLast(1)
-        .once("value").then(function(snapshot) {
-          var value = snapshot.val();
-          for(key in value) {
-            return value[key].time;
-          }
-        }).then(function(time) {
-          setPlayerTime(time);
-        });
-      }
+    //
+    if (event.keyCode == 8 && event.shiftKey) {
+      event.preventDefault();
+      /*firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(getPlayerTime()).limitToLast(1)
+      .once("value").then(function(snapshot) {
+        var value = snapshot.val();
+        for(key in value) {
+          return {
+            time: value[key].time,
+            endTime: value[key].endTime
+          };
+        }
+      })*/
+      firebase.database().ref("/captions/" + transcriptKey + "/" + currentID).once("value").then(function(snapshot) {
+        var value = snapshot.val();
+        return {
+          time: value.time,
+          endTime: value.endTime
+        };
+      })
+      .then(function(info) {
+        setPlayerTime(info.time);
+        scheduledStop = true;
+        scheduledTime = info.endTime;
+        startBarrier = info.time;
 
-      if(event.keyCode == 32 && event.shiftKey) {
-        event.preventDefault();
-        togglePlayPause();
-      }
-
-      //F7 rewind 10 seconds
-      if(event.keyCode === 118 && event.ctrlKey) {
-        var time = getPlayerTime();
-        var cor = time < 10? 0 : time - 10;
-        setPlayerTime(cor);
-      }
-
-      //F8 forward 10 seconds
-      if(event.keyCode === 119 && event.ctrlKey) {
-        var time = getPlayerTime();
-        var duration = getDuration();
-        var cor = duration - time < 10? duration : time + 10;
-        setPlayerTime(cor);
-      }
-
-      //F9 key held down will play
-      if(event.keyCode === 120 && !playKeyDown) {
-        playKeyDown = true;
-
-        if (!playing) {
+        if(!playing) {
           togglePlayPause();
         }
+        console.log("Scheduled time set:");
+        console.log(scheduledTime);
+      });
+    }
+
+    if(event.keyCode == 32 && event.shiftKey) {
+      event.preventDefault();
+      togglePlayPause();
+    }
+
+    //F7 rewind 10 seconds
+    if(event.keyCode === 118 && event.ctrlKey) {
+      stopMade = false;
+      var time = getPlayerTime();
+      var cor = time < 10? 0 : time - 10;
+      setPlayerTime(cor);
+    }
+
+    //F8 forward 10 seconds
+    if(event.keyCode === 119 && event.ctrlKey) {
+      stopMade = false;
+      var time = getPlayerTime();
+      var duration = getDuration();
+      var cor = duration - time < 10? duration : time + 10;
+      setPlayerTime(cor);
+    }
+
+    //F9 key held down will play
+    if(event.keyCode === 120 && !playKeyDown) {
+      playKeyDown = true;
+
+      if (!playing) {
+        togglePlayPause();
       }
-  }, false);
+    }
+    }, false);
 
   document.addEventListener('keyup', function(event) {
     //f9 key released will pause audio
@@ -557,18 +713,6 @@ function addDocumentListeners() {
     });
   */
 
-}
-
-
-function updatePlayingState(eventData) {
-    //playing = !playing;
-    state = eventData.playState;
-    if (state == "playing") {
-      playing = true;
-    }
-    else {
-      playing = false;
-    }
 }
 
 });
