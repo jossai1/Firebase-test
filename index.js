@@ -694,6 +694,12 @@ function addDocumentListeners() {
         scheduledTime = info.endTime;
         startBarrier = info.time;
 
+        if (tEventID !== undefined) {
+          player.removeTimedEvent(tEventID);
+        }
+
+        tEventID = player.addTimedEvent(info.endTime, "pause", "");
+
         if(!playing) {
           togglePlayPause();
         }
