@@ -24,6 +24,9 @@ var startBarrier;
 var stopMade = false;
 var stopTime;
 
+//NEW LOGIC FOR SHIFT Backspace
+var tEventID;
+
 function startFirebase() {
   var config = {
     apiKey: "AIzaSyC_PcyEemJampMIHiefh94vw9eMpoaYDGI",
@@ -219,6 +222,7 @@ function timeChangedListener() {
   player.addHandler("currenttimechanged", function(event) {
     //console.log("time changed event");
 
+    /*
     // SHIFT + BACKSPACE LOGIC
     epsilon = 0.5;
     if (scheduledStop) {
@@ -268,6 +272,23 @@ function timeChangedListener() {
       console.log("Undoing stop at: ");
       console.log(getPlayerTime());
     }
+    */
+
+    epsilon = 0.5;
+
+    if(startBarrier > player.getCurrentTime()) {
+      if (tEventID !== undefined) {
+        player.removeTimedEvent(tEventID);
+      }
+      stopMade = false;
+    }
+
+    else if(scheduledTime + epsilon < player.getCurrentTime()) {
+      if (tEventID !== undefined) {
+        player.removeTimedEvent(tEventID);
+      }
+      stopMade = false;
+    }
 
     if (!stopMade) {
       var id;
@@ -297,6 +318,16 @@ function timeChangedListener() {
           }
         });
     }
+  });
+
+  player.addHandler("timedeventreached", function(event) {
+    if(playing) {
+      togglePlayPause();
+    }
+
+    stopMade = true;
+    player.removeTimedEvent(tEventID);
+    tEventID = undefined;
   });
 }
 
@@ -373,7 +404,7 @@ function createSectionTimeStampElement(time) {
     var sectionTimestampElement = $('<div class="ui top left attached label"><input class="label-formatting" placeholder="Speaker" type="text" size="10" maxlength="16" class="section-timestamp" value="' + formatStartTime(time) + '" disabled /></div>');
     sectionTimestampElement.click(function() {
       setPlayerTime(time);
-      console.log("click");
+      //console.log("click");
     });
     //var sectionTimestampElement = $("<div class='ui top left attached label'>"+time+"</div>");
     return sectionTimestampElement;
@@ -571,6 +602,9 @@ function addDocumentListeners() {
       event.preventDefault();
 
       if(stopMade) {
+        console.log("stop made, currentID is...");
+        console.log(currentID);
+        stopMade = false;
         firebase.database().ref("/captions/" + transcriptKey + "/" + currentID).once("value")
           .then(function(snapshot) {
             value = snapshot.val();
@@ -580,7 +614,7 @@ function addDocumentListeners() {
             return firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").startAt(time)
               .limitToFirst(2).once("value").then(function(snapshot) {
                 var value2 = snapshot.val();
-                var numKeys = Object.keys(value).length;
+                var numKeys = Object.keys(value2).length;
                 var count = 1;
                 if(numKeys == 2) {
                   for (key in value2) {
