@@ -598,6 +598,7 @@ function addDocumentListeners() {
         }
     }
 
+
     if (event.keyCode == 39 && event.shiftKey) {
       event.preventDefault();
 
@@ -606,65 +607,81 @@ function addDocumentListeners() {
         console.log(currentID);
         stopMade = false;
         firebase.database().ref("/captions/" + transcriptKey + "/" + currentID).once("value")
-          .then(function(snapshot) {
-            value = snapshot.val();
-            return value.time;
-          })
-          .then(function(time) {
-            return firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").startAt(time)
-              .limitToFirst(2).once("value").then(function(snapshot) {
-                var value2 = snapshot.val();
-                var numKeys = Object.keys(value2).length;
-                var count = 1;
-                if(numKeys == 2) {
-                  for (key in value2) {
-                    if (count == 2) {
-                      return value2[key].time;
-                    }
-
-                    else {
-                      count++;
-                    }
-                  }
+        .then(function(snapshot) {
+          value = snapshot.val();
+          return value.time;
+        }).then(function(time) {
+          return firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").startAt(time)
+          .limitToFirst(2).once("value").then(function(snapshot) {
+            var value2 = snapshot.val();
+            var numKeys = Object.keys(value2).length;
+            var count = 1;
+            console.log("number of keys: ");
+            console.log(numKeys);
+            console.log("value2: ");
+            console.log(value2);
+            if(numKeys == 2) {
+              //console.log("2 keys");
+              for (key in value2) {
+                if (count == 2) {
+                  return value2[key].time;
                 }
 
                 else {
-                  for (key in value2) {
-                    return value2[key].time;
-                  }
+                  count++;
                 }
-              });
-          }).then(function (time) {
-            setPlayerTime(time);
+              }
+            }
+
+            else {
+              //console.log("1 key");
+              for (key in value2) {
+                return value2[key].time;
+              }
+            }
           });
-      }
-
-      else {
-        firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").startAt(getPlayerTime())
-        .limitToFirst(2).once("value").then(function(snapshot) {
-          var value = snapshot.val();
-          var numKeys = Object.keys(value).length;
-          var count = 1;
-          if(numKeys == 2) {
-            for (key in value) {
-              if(count == 2) {
-                return value[key].time;
-              }
-
-              else {
-                count++;
-              }
-            }
-          }
-
-          else {
-            for (key in value) {
-              return value[key].time;
-            }
-          }
         }).then(function (time) {
           setPlayerTime(time);
         });
+      }
+
+      else {
+          firebase.database().ref("/captions/" + transcriptKey + "/" + currentID).once("value")
+          .then(function(snapshot) {
+            value = snapshot.val();
+              return value.time;
+          }).then(function (time) {
+            return firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").startAt(time)
+            .limitToFirst(2).once("value").then(function(snapshot) {
+              var value2 = snapshot.val();
+              var numKeys = Object.keys(value2).length;
+              var count = 1;
+              console.log("number of keys: ");
+              console.log(numKeys);
+              console.log("value2: ");
+              console.log(value2);
+              if(numKeys == 2) {
+                //console.log("2 keys");
+                for (key in value2) {
+                  if (count == 2) {
+                    return value2[key].time;
+                  }
+                  else {
+                    count++;
+                  }
+                }
+              }
+
+              else {
+                //console.log("1 key");
+                for (key in value2) {
+                  return value2[key].time;
+                }
+              }
+            });
+          }).then(function (time) {
+            setPlayerTime(time);
+          });
       }
     }
 
