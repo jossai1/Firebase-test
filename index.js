@@ -4,7 +4,7 @@ angular.module('app').controller("MainController", function($scope, $rootScope, 
   $scope.userData;
 
   $scope.$on('$viewContentLoaded', function() {
-      //get userdata from sharedservice
+      //get and store userdata from sharedservice
       $scope.userData = SharedService.getUserData();
 
       console.log("starting firebase");

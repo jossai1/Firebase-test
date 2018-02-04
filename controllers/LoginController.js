@@ -32,8 +32,6 @@ angular.module('app').controller("LoginController", function($scope, $rootScope,
 
 
 
-
-
     $scope.register = function() {
         //save them locally for ease of typing
         var email = $scope.email;
