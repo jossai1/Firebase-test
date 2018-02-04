@@ -1,7 +1,12 @@
-angular.module('app').controller("MainController", function($scope, $rootScope, $location) {
+angular.module('app').controller("MainController", function($scope, $rootScope, $location,SharedService) {
 
+
+  $scope.userData;
 
   $scope.$on('$viewContentLoaded', function() {
+      //get userdata from sharedservice
+      $scope.userData = SharedService.getUserData();
+
       console.log("starting firebase");
       startFirebase();
   });
@@ -28,6 +33,8 @@ var stopTime;
 var tEventID;
 
 function startFirebase() {
+
+  /* moved this to index.html so firebase is available to to the whole application 
   var config = {
     apiKey: "AIzaSyC_PcyEemJampMIHiefh94vw9eMpoaYDGI",
     authDomain: "test-project-96190.firebaseapp.com",
@@ -52,7 +59,7 @@ function startFirebase() {
       firebase.auth.GoogleAuthProvider.PROVIDER_ID,
     ],
     tosUrl: 'google.com'
-  };
+  };*/
 
   //change callback here
   //var ui = new firebaseui.auth.AuthUI(firebase.auth());
@@ -90,11 +97,11 @@ function startDatabase() {
   var hash = window.location.hash.replace(/#/g, '');
   console.log("hash: " + hash);
   //angular router has hash in url  already so add this check instaed
-  if(hash !== "/") {
+  if(hash !== "/editor") {
     var ref = firebase.database().ref("/captions/");
-    checkExistence(ref.child(hash.replace(/\//g, ""))).then(function(exists) {
+    checkExistence(ref.child(hash.split("editor")[1])).then(function(exists) {
       if (exists) {
-        transcriptKey = hash.replace(/\//g, "");
+        transcriptKey = hash.split("editor")[1];
         loadScript();
       }
 

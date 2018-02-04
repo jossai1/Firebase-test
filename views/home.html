@@ -1,0 +1,58 @@
+<header ng-controller="HomeController">
+    <div class="ui teal inverted menu">
+        <div class="item left">
+            <h2>Synote</h2>
+        </div>
+        <!--  <a class="item">
+              Help
+            </a>
+            <a class="item">
+              Tutorial
+            </a> -->
+        <a href="#/my-teams" class="item">
+            My Teams
+        </a>
+        <!-- todo - display points on hover -->
+        <a class="item">
+              {{userData.email}}
+        </a>
+    </div>
+</header>
+<div class="container" ng-init="displayUsername()">
+    <br>
+    <div class="ui grid">
+        <div class="four wide column">
+            <div class="ui left floated stacked segments">
+                <div class="ui segment">
+                    <i style="color: grey;font-size: 2em;" class="user icon"></i> {{userData.email}}
+                </div>
+                <div class="ui segment">
+                    <i style="color: gold;font-size: 2em;" class="trophy icon"></i>100 pts
+                </div>
+                <div class="ui segment">
+                    <button ng-click="logout()"class="ui button">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="one wide column">
+        </div>
+        <div class="eleven wide column">
+            <h1>View Transcripts</h1>
+            <div class="ui cards">
+                <div class="card">
+                    <div class="content">
+                        <div class="header">
+                            <a href="#/editor#-L2ECATL0IGoA4Pj7RlP">Usability and Accessibility Lecture</a>
+                        </div>
+                        <div class="meta">John Doe</div>
+                        <div class="description">
+                            Lorem epsom lorem lorem
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

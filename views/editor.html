@@ -2,15 +2,19 @@
     <div class="item left">
         <h2>Synote</h2>
     </div>
-   <!--  <a class="item">
+    <a href="#home" class="item">
+        <i class="home icon"></i> Home
+    </a>
+    <a class="item">
+        {{userData.email}}
+    </a>
+    <!--  <a class="item">
    Help
  </a>
     <a class="item">
    Tutorial
  </a>
  --></div>
-
-
 <div ng-controller="MainController">
     <div class="ui grid">
         <div id="vid" class="seven wide column">
@@ -24,7 +28,7 @@
                     </div>
                     <p class="grey" style="font-size: x-small;"> SHIFT + SPACE to PLAY/PAUSE</p>
                     <p class="grey" style="font-size: x-small;"> TAB to EDIT CAPTION</p>
-                   <!--  <div class="ui card">
+                    <!--  <div class="ui card">
                         <div class="content">
                             <div class="description">
                                 <p id="currentCaption">Current Caption</p>
@@ -32,14 +36,13 @@
                         </div>
                     </div> -->
                     <div id="current-caption"></div>
-
                 </div>
                 <div class="ui divider"></div>
                 <div class="details">
                     <!-- <button style="float:right;" class="circular basic ui icon button">
             <i class="angle up icon" style="color:#6a6263;font-weight: bold;font-size:20px"></i>
           </button> -->
-                 <!--    <h3>Usability + Accessibility+ UX</h3>
+                    <!--    <h3>Usability + Accessibility+ UX</h3>
                     <h4 class="grey">Publish on 2/10/2017</h4>
                     <span class="grey">
             <i class="user icon"></i> Mike Wald
@@ -51,9 +54,9 @@
             <!--sticky tool bar -->
             <div class="ui sticky icon menu remove-pad">
                 <a class="item">
-          <!--<i style="margin-right: 9%;" class="unhide icon"></i>-->
-          <p class="collabNumber"> Collaborators: 0 </p>
-        </a>
+                    <!--<i style="margin-right: 9%;" class="unhide icon"></i>-->
+                    <p class="collabNumber"> Collaborators: 0 </p>
+                </a>
                 <!-- <a class="item">
           <i class="undo icon"></i>
         </a>
@@ -68,7 +71,7 @@
         </div>
     </div>
     <div class="ui special popup" id="pops">
-      <div class="header">Collaborators</div>
-      <p class="collabno"> Number </p>
+        <div class="header">Collaborators</div>
+        <p class="collabno"> Number </p>
     </div>
 </div>

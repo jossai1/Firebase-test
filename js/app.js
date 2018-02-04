@@ -4,17 +4,31 @@ var app = angular.module('app', ["ngRoute"]);
 app.config(['$routeProvider', '$locationProvider',
     function($routeProvider, $locationProvider) {
         $routeProvider
-            .when("/", {
+             .when("/", {
+                templateUrl: "views/welcome.html",
+                controller: "LoginController"  
+            })
+            .when("/home", {
+                templateUrl: "views/home.html",
+                controller: "HomeController"  
+            })
+            .when("/my-teams", {
+                templateUrl: "views/my_teams.html",
+                controller: "MainController"  
+            })
+            .when("/editor", {
                 templateUrl: "views/editor.html",
                 controller: "MainController"  
             })
-            .when("#" + "/:id", {
+            .when("/editor" +"#" +"/:id", {
                 templateUrl: "views/editor.html",
                 controller: "MainController"  
             })
             .otherwise({       
                 redirectTo: '/' 
             });
+
+        
         // .when("/", {
         //     templateUrl: "views/editor.html",
         //     controller: "MainController"  
