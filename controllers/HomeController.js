@@ -15,7 +15,7 @@ angular.module('app').controller("HomeController", function($scope, $rootScope, 
         
         // set to null and route 
         // add a check to see if the userdata is null or empty ==> user not logged in 
-    	SharedService.setUserData({});
+    	SharedService.setUserData(null);
     	window.location.href = "#";
 
     };

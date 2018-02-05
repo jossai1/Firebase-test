@@ -2,6 +2,7 @@ angular.module('app').controller("MainController", function($scope, $rootScope, 
 
 
   $scope.userData;
+  $scope.shareUrl;
 
   $scope.$on('$viewContentLoaded', function() {
       //get and store userdata from sharedservice
@@ -102,6 +103,8 @@ function startDatabase() {
     checkExistence(ref.child(hash.split("editor")[1])).then(function(exists) {
       if (exists) {
         transcriptKey = hash.split("editor")[1];
+        $scope.shareUrl = "http://127.0.0.1:8080/#/editor#" + transcriptKey;
+        $scope.$apply(); //get url to show in input box
         loadScript();
       }
 
@@ -110,6 +113,8 @@ function startDatabase() {
         transcriptKey = ref.push().key;
         window.location.hash = window.location.hash + '#' + transcriptKey;
         //console.log("new window location: " + window.location.split('#')[0] + '#' + transcriptKey);
+        $scope.shareUrl = "http://127.0.0.1:8080/#/editor#" + transcriptKey;
+        $scope.$apply(); //get url to show in input box 
         initTranscript();
       }
     });
@@ -121,6 +126,8 @@ function startDatabase() {
     //console.log("hash is: " + window.location.hash);
     //history.replaceState(undefined, undefined, '#' + transcriptKey);
     //console.log("hash is " + window.location.hash);
+    $scope.shareUrl = "http://127.0.0.1:8080/#/editor#" + transcriptKey;
+    $scope.$apply(); //get url to show in input box
     initTranscript();
   }
 }

@@ -18,7 +18,7 @@ angular.module('app').controller("LoginController", function($scope, $rootScope,
                 $rootScope.currentUser = snapshot.val();
                 console.log(snapshot.val());
                 // if successful route to home 
-                SharedService.setUserData(user);
+                SharedService.setUserData(snapshot.val());
                 window.location.href = "#home";
             });
 
@@ -43,13 +43,14 @@ angular.module('app').controller("LoginController", function($scope, $rootScope,
 
             var currentUser = {
                 email: email,
+                repScore: 0,
                 uid: user.uid
             };
 
             firebase.database().ref('users/' + user.uid).set(currentUser);
             $rootScope.currentUser = currentUser;
 
-            alert("Account created! Please Login with your details.")
+            alert("Account created! Please Login with your details.");
 
         }).catch(function(error) {
             var errorCode = error.code;
