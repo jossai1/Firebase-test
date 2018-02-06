@@ -12,9 +12,9 @@ angular.module('app').controller("HomeController", function($scope, $rootScope, 
     };
 
     $scope.logout = function() {
-        
-        // set to null and route 
-        // add a check to see if the userdata is null or empty ==> user not logged in 
+
+        // set to null and route
+        // add a check to see if the userdata is null or empty ==> user not logged in
     	SharedService.setUserData(null);
     	window.location.href = "#";
 

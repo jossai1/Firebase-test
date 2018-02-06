@@ -12,6 +12,11 @@ angular.module('app').controller("MainController", function($scope, $rootScope, 
       startFirebase();
   });
 
+  $scope.test = function (){
+    $('.ui.basic.modal')
+      .modal('show');
+  };
+
 var url = "https://sofo.mediasite.com/Mediasite/Play/d64d7806bcc14f95a3c57633bcfd30c31d";
 var player;
 var controls;
@@ -35,7 +40,7 @@ var tEventID;
 
 function startFirebase() {
 
-  /* moved this to index.html so firebase is available to to the whole application 
+  /* moved this to index.html so firebase is available to to the whole application
   var config = {
     apiKey: "AIzaSyC_PcyEemJampMIHiefh94vw9eMpoaYDGI",
     authDomain: "test-project-96190.firebaseapp.com",
@@ -114,7 +119,7 @@ function startDatabase() {
         window.location.hash = window.location.hash + '#' + transcriptKey;
         //console.log("new window location: " + window.location.split('#')[0] + '#' + transcriptKey);
         $scope.shareUrl = "http://127.0.0.1:8080/#/editor#" + transcriptKey;
-        $scope.$apply(); //get url to show in input box 
+        $scope.$apply(); //get url to show in input box
         initTranscript();
       }
     });

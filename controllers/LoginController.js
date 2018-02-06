@@ -14,10 +14,10 @@ angular.module('app').controller("LoginController", function($scope, $rootScope,
         firebase.auth().signInWithEmailAndPassword(email, password).then(function() {
             var user = firebase.auth().currentUser;
 
-            firebase.database().ref('users/' + user.uid).once('value').then(function(snapshot) {
+            firebase.database().ref('users/' + user.uid).on('value', function(snapshot) {
                 $rootScope.currentUser = snapshot.val();
                 console.log(snapshot.val());
-                // if successful route to home 
+                // if successful route to home
                 SharedService.setUserData(snapshot.val());
                 window.location.href = "#home";
             });

@@ -2,13 +2,13 @@ var app = angular.module('app', ["ngRoute"]);
 
 
 /**
-- session management using local storage 
-- when a user logs in we store their data in local storage 
-- it is null when they logout 
-- runs before routing to the a url 
+- session management using local storage
+- when a user logs in we store their data in local storage
+- it is null when they logout
+- runs before routing to the a url
 - if it is null that means they have not logged in yet or have logged out so we route them back to the login page
-- we need it to check if a user is logged in 
-- if a user is logged in i.e. the userdata !== null then we let them go to their route and set the sharedservice userdata to what is in the storage 
+- we need it to check if a user is logged in
+- if a user is logged in i.e. the userdata !== null then we let them go to their route and set the sharedservice userdata to what is in the storage
     - we need to do this re-setting because when you refresh the page angular deletes the sharedservice data
 
 */
@@ -36,10 +36,6 @@ app.config(['$routeProvider', '$locationProvider',
             .when("/home", {
                 templateUrl: "views/home.html",
                 controller: "HomeController"  
-            })
-            .when("/my-teams", {
-                templateUrl: "views/my_teams.html",
-                controller: "MainController"  
             })
             .when("/editor", {
                 templateUrl: "views/editor.html",
