@@ -23,19 +23,31 @@ var playKeyDown = false;
 var playing = false;
 var noUsers;
 
-//NEW GLOBALS FOR BACKSPACE + SHIFT
+//GLOBALS FOR BACKSPACE + SHIFT
 var scheduledStop = false;
 var scheduledTime;
 var startBarrier;
 var stopMade = false;
 var stopTime;
-
-//NEW LOGIC FOR SHIFT Backspace
 var tEventID;
+
+//GLOBALS TRACKING USER WATCH TIME
+var editing = false;
+var longestStreak = 0.0;
+var startWatch;
+var endWatch;
+
+//Caption info
+var captionStart;
+var captionEnd;
+
+//Time change promise
+var tcpromise = null;
+var epsilon = 0.5;
 
 function startFirebase() {
 
-  /* moved this to index.html so firebase is available to to the whole application 
+  /* moved this to index.html so firebase is available to to the whole application
   var config = {
     apiKey: "AIzaSyC_PcyEemJampMIHiefh94vw9eMpoaYDGI",
     authDomain: "test-project-96190.firebaseapp.com",
@@ -67,6 +79,10 @@ function startFirebase() {
   //ui.start('#auth-container', uiConfig);
   //ui.delete(); //delete ui or it will cause an error
   //initializeCodeMirror();
+  $('.ui.checkbox').checkbox({
+    onChecked: function () {editing = true;},
+    onUnchecked: function () {editing = false;}
+  });
   getPlayerReference(startDatabase);
 }
 
@@ -75,6 +91,15 @@ function initializeCodeMirror() {
   editor.setOption("extraKeys", {
     "Shift-Backspace": function(cm) {}
   });
+
+  editor.on("focus", function(event) {
+    $('#checkboi').checkbox('check');
+    $('#checkboi').checkbox('disable');
+  });
+
+  editor.on("blur", function(event) {
+    $('#checkboi').checkbox('enable');
+  })
 }
 
 function getPlayerReference(callback) {
@@ -114,10 +139,13 @@ function startDatabase() {
         window.location.hash = window.location.hash + '#' + transcriptKey;
         //console.log("new window location: " + window.location.split('#')[0] + '#' + transcriptKey);
         $scope.shareUrl = "http://127.0.0.1:8080/#/editor#" + transcriptKey;
-        $scope.$apply(); //get url to show in input box 
+        $scope.$apply(); //get url to show in input box
         initTranscript();
       }
     });
+
+    player.removeHandler("ready", this);
+    console.log("handler removed");
   }
 
   else {
@@ -141,15 +169,6 @@ function checkExistence(dataRef) {
 
 
 function scrollToSection(key) {
-  //var firepadContainer = document.getElementById("firepad-container");
-  //var textBox = document.getElementById(key);
-  console.log("scrolling");
-  //textBox = document.getElementById(key);
-  //console.log("Caption key we are looking for: " + key);
-  //console.log("Element found for scrolling: " + textBox);
-  //var offset = textBox.offsetTop;
-  //firepadContainer.scrollTop = offset;
-
   $('#firepad-container').scrollTop(
     $('#'+key).offset().top - $('#firepad-container').offset().top + $('#firepad-container').scrollTop()
   );
@@ -194,8 +213,6 @@ function initTranscript() {
   for(var i = 0; i < captions.length; i++) {
     var caption = captions[i];
     var promise = createCaption(caption).then(addFireRef);
-
-    //console.log("Not Pushing promise")
     promiseArr.push(promise);
   }
 
@@ -233,104 +250,305 @@ function makeElements(values) {
 }
 
 function timeChangedListener() {
-  player.addHandler("currenttimechanged", function(event) {
-    //console.log("time changed event");
+  /*player.addHandler("currenttimechanged", function(event) {
 
-    /*
-    // SHIFT + BACKSPACE LOGIC
-    epsilon = 0.5;
-    if (scheduledStop) {
-      //console.log("A stop is scheduled");
-      if (event.currentTime >= scheduledTime && event.currentTime <= scheduledTime + epsilon) {
-        //console.log("Stop triggered");
-        scheduledStop = false;
-        stopMade = true;
-        //setPlayerTime(scheduledTime);
-        if (playing) {
-          togglePlayPause();
-          console.log("has playing updated?");
-          console.log(playing);
-          console.log("has play state updated?");
-          console.log(player.getPlayState());
+    //Set up promise chanining here so that time events are received in chronological order!!!
+    if (tcpromise === null) {
+      //console.log("time changed event");
+      console.log("current time changed to: " + event.currentTime);
+      epsilon = 0.5;
+
+      if(startBarrier > player.getCurrentTime()) {
+        if (tEventID !== undefined) {
+          player.removeTimedEvent(tEventID);
         }
-
-        stopTime = getPlayerTime();
-
-        console.log("Stopped at: ");
-        console.log(stopTime);
-
-        console.log("Pausing test...");
-        console.log(getPlayerTime());
-        console.log(getPlayerTime());
+        stopMade = false;
       }
 
-      //The user has moved outside the caption time slot before the scheduled stop time
-      else if(event.currentTime > scheduledTime + epsilon) {
-        scheduledStop = false;
+      else if(scheduledTime + epsilon < player.getCurrentTime()) {
+        if (tEventID !== undefined) {
+          player.removeTimedEvent(tEventID);
+        }
+        stopMade = false;
       }
 
-      else if(event.currentTime < startBarrier) {
-        scheduledStop = false;
-      }
-    }
 
-    //If the player time has moved since the last stop then unlock the firepad caption box
-    if (stopTime + epsilon < getPlayerTime() && stopMade) {
-      stopMade = false;
-      console.log("Undoing stop at: ");
-      console.log(getPlayerTime());
-    }
-
-    else if(stopTime > getPlayerTime() && stopMade) {
-      stopMade = false;
-      console.log("Undoing stop at: ");
-      console.log(getPlayerTime());
-    }
-    */
-
-    epsilon = 0.5;
-
-    if(startBarrier > player.getCurrentTime()) {
-      if (tEventID !== undefined) {
-        player.removeTimedEvent(tEventID);
-      }
-      stopMade = false;
-    }
-
-    else if(scheduledTime + epsilon < player.getCurrentTime()) {
-      if (tEventID !== undefined) {
-        player.removeTimedEvent(tEventID);
-      }
-      stopMade = false;
-    }
-
-    if (!stopMade) {
-      var id;
-      firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(event.currentTime).limitToLast(1).once("value")
-        .then(function(snapshot) {
-          for (keys in snapshot.val()) {
-            id = keys;
-          }
-          if(id != null && id != currentID) {
-            var firepadRef = firebase.database().ref("/firepads/" + transcriptKey + "/" + id);
-
-            if(currentFirepad) {
-              currentFirepad.dispose();
-              editor.setValue("");
-              editor.clearHistory();
-              var cmelement = document.getElementsByClassName('CodeMirror')[0];
-              var ccelement = document.getElementById("current-caption");
-              ccelement.removeChild(cmelement);
+      if (!stopMade) {
+        var id;
+        firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(event.currentTime).limitToLast(1).once("value")
+          .then(function(snapshot) {
+            console.log("executing promise for: " + event.currentTime);
+            for (keys in snapshot.val()) {
+              id = keys;
             }
 
-            initializeCodeMirror();
-            currentFirepad = Firepad.fromCodeMirror(firepadRef, editor, {richTextToolbar:false, richTextShortcuts:false});
-            //poweredBy = document.getElementsByClassName('powered-by-firepad')
-            //poweredBy[0].style.display = 'none';
-            currentID = id;
-            scrollToSection(id);
+            if(startWatch === undefined) {
+              startWatch = event.currentTime;
+              endWatch = event.currentTime;
+            }
+
+            if (event.currentTime >= endWatch && event.currentTime <= endWatch + epsilon) {
+              endWatch = event.currentTime;
+              streak = endWatch - startWatch;
+              if(streak > longestStreak) {
+                longestStreak = streak;
+              }
+            }
+
+            else {
+              console.log("resetting timer");
+              console.log("current time is: " + event.currentTime);
+              console.log("endWatch: " +  endWatch);
+              startWatch = event.currentTime
+              endWatch = event.currentTime;
+            }
+
+            if(id != null && id != currentID) {
+              var firepadRef = firebase.database().ref("/firepads/" + transcriptKey + "/" + id);
+
+              if(currentFirepad) {
+                currentFirepad.dispose();
+                editor.setValue("");
+                editor.clearHistory();
+                var cmelement = document.getElementsByClassName('CodeMirror')[0];
+                var ccelement = document.getElementById("current-caption");
+                ccelement.removeChild(cmelement);
+              }
+
+              if(currentID !== undefined) {
+                //console.log("checking streak is longest for " + currentID);
+                //console.log("longest streak: " + longestStreak);
+                //console.log("perfect streak is: " + (captionEnd - captionStart));
+                if (longestStreak > 0.8*(captionEnd - captionStart)) {
+                  firebase.database().ref("/watchInfo/" + transcriptKey + "/" + currentID + "/" + firebase.auth().currentUser.uid)
+                  .set(firebase.database.ServerValue.TIMESTAMP);
+                }
+              }
+
+              caption = snapshot.val();
+              //for(keys in caption) {
+                //console.log(keys);
+              //};
+              captionStart = caption[id].time;
+              captionEnd = caption[id].endTime;
+              startWatch = event.currentTime;
+              endWatch = event.currentTime;
+              longestStreak = 0.0;
+              //console.log("captionStart: " + captionStart);
+              //console.log("start watch: " + startWatch);
+              //console.log("captionEnd: " + captionEnd);
+              //console.log("end watch: " + endWatch);
+
+              initializeCodeMirror();
+              currentFirepad = Firepad.fromCodeMirror(firepadRef, editor, {richTextToolbar:false, richTextShortcuts:false});
+              currentID = id;
+              scrollToSection(id);
+            }
+          });
+      }
+    }
+
+    else {
+      tcpromise.then(function () {
+
+      });
+    }
+
+  });*/
+
+  player.addHandler("currenttimechanged", function(event) {
+    console.log("ACTUAL ORDER: " + event.currentTime);
+    if (tcpromise === null) {
+      //console.log("Initialising promise");
+      tcpromise = new Promise(function(resolve, reject) {
+        //console.log("running first promise");
+        if(startBarrier > player.getCurrentTime()) {
+          if (tEventID !== undefined) {
+            player.removeTimedEvent(tEventID);
           }
-        });
+          stopMade = false;
+        }
+
+        else if(scheduledTime + epsilon < player.getCurrentTime()) {
+          if (tEventID !== undefined) {
+            player.removeTimedEvent(tEventID);
+          }
+          stopMade = false;
+        }
+        //console.log("first part of initial promise has finished");
+        resolve();
+      }).then(function () {
+        //console.log("In second part of initial promise");
+        if (!stopMade) {
+          var id;
+          return firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(event.currentTime).limitToLast(1).once("value")
+            .then(function(snapshot) {
+              //console.log("executing promise for: " + event.currentTime);
+              for (keys in snapshot.val()) {
+                id = keys;
+              }
+
+              if(startWatch === undefined) {
+                startWatch = event.currentTime;
+                endWatch = event.currentTime;
+              }
+
+              if (event.currentTime >= endWatch - epsilon && event.currentTime <= endWatch + 2*epsilon) {
+                endWatch = event.currentTime;
+                streak = endWatch - startWatch;
+                if(streak > longestStreak) {
+                  longestStreak = streak;
+                }
+              }
+
+              else {
+                console.log("resetting timer");
+                console.log("current time is: " + event.currentTime);
+                console.log("endWatch: " +  endWatch);
+                startWatch = event.currentTime
+                endWatch = event.currentTime;
+              }
+
+              if(id != null && id != currentID) {
+                var firepadRef = firebase.database().ref("/firepads/" + transcriptKey + "/" + id);
+
+                if(currentFirepad) {
+                  currentFirepad.dispose();
+                  editor.setValue("");
+                  editor.clearHistory();
+                  var cmelement = document.getElementsByClassName('CodeMirror')[0];
+                  var ccelement = document.getElementById("current-caption");
+                  ccelement.removeChild(cmelement);
+                }
+
+                if(currentID !== undefined) {
+                  //console.log("checking streak is longest for " + currentID);
+                  //console.log("longest streak: " + longestStreak);
+                  //console.log("perfect streak is: " + (captionEnd - captionStart));
+                  if (longestStreak > 0.8*(captionEnd - captionStart) && editing) {
+                    firebase.database().ref("/watchInfo/" + transcriptKey + "/" + currentID + "/" + firebase.auth().currentUser.uid)
+                    .set(firebase.database.ServerValue.TIMESTAMP);
+                  }
+                }
+
+                caption = snapshot.val();
+                //for(keys in caption) {
+                  //console.log(keys);
+                //};
+                captionStart = caption[id].time;
+                captionEnd = caption[id].endTime;
+                startWatch = event.currentTime;
+                endWatch = event.currentTime;
+                longestStreak = 0.0;
+                //console.log("captionStart: " + captionStart);
+                //console.log("start watch: " + startWatch);
+                //console.log("captionEnd: " + captionEnd);
+                //console.log("end watch: " + endWatch);
+
+                initializeCodeMirror();
+                currentFirepad = Firepad.fromCodeMirror(firepadRef, editor, {richTextToolbar:false, richTextShortcuts:false});
+                currentID = id;
+                scrollToSection(id);
+              }
+            });
+        }
+      });
+    }
+
+    else {
+      tcpromise = tcpromise.then(function () {
+        //console.log("time changed event");
+        //console.log("current time changed to: " + event.currentTime);
+        epsilon = 0.5;
+
+        if(startBarrier > player.getCurrentTime()) {
+          if (tEventID !== undefined) {
+            player.removeTimedEvent(tEventID);
+          }
+          stopMade = false;
+        }
+
+        else if(scheduledTime + epsilon < player.getCurrentTime()) {
+          if (tEventID !== undefined) {
+            player.removeTimedEvent(tEventID);
+          }
+          stopMade = false;
+        }
+      }).then(function() {
+        if (!stopMade) {
+          var id;
+          return firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(event.currentTime).limitToLast(1).once("value")
+            .then(function(snapshot) {
+              //console.log("executing promise for: " + event.currentTime);
+              for (keys in snapshot.val()) {
+                id = keys;
+              }
+
+              if(startWatch === undefined) {
+                startWatch = event.currentTime;
+                endWatch = event.currentTime;
+              }
+
+              if (event.currentTime >= endWatch - epsilon && event.currentTime <= endWatch + 2*epsilon) {
+                endWatch = event.currentTime;
+                streak = endWatch - startWatch;
+                if(streak > longestStreak) {
+                  longestStreak = streak;
+                }
+              }
+
+              else {
+                console.log("resetting timer");
+                console.log("current time is: " + event.currentTime);
+                console.log("endWatch: " +  endWatch);
+                startWatch = event.currentTime
+                endWatch = event.currentTime;
+              }
+
+              if(id != null && id != currentID) {
+                var firepadRef = firebase.database().ref("/firepads/" + transcriptKey + "/" + id);
+
+                if(currentFirepad) {
+                  currentFirepad.dispose();
+                  editor.setValue("");
+                  editor.clearHistory();
+                  var cmelement = document.getElementsByClassName('CodeMirror')[0];
+                  var ccelement = document.getElementById("current-caption");
+                  ccelement.removeChild(cmelement);
+                }
+
+                if(currentID !== undefined) {
+                  console.log("checking streak is longest for " + currentID);
+                  console.log("longest streak: " + longestStreak);
+                  console.log("perfect streak is: " + (captionEnd - captionStart));
+                  if (longestStreak > 0.8*(captionEnd - captionStart) && editing) {
+                    firebase.database().ref("/watchInfo/" + transcriptKey + "/" + currentID + "/" + firebase.auth().currentUser.uid)
+                    .set(firebase.database.ServerValue.TIMESTAMP);
+                  }
+                }
+
+                caption = snapshot.val();
+                //for(keys in caption) {
+                  //console.log(keys);
+                //};
+                captionStart = caption[id].time;
+                captionEnd = caption[id].endTime;
+                startWatch = event.currentTime;
+                endWatch = event.currentTime;
+                longestStreak = 0.0;
+                //console.log("captionStart: " + captionStart);
+                //console.log("start watch: " + startWatch);
+                //console.log("captionEnd: " + captionEnd);
+                //console.log("end watch: " + endWatch);
+
+                initializeCodeMirror();
+                currentFirepad = Firepad.fromCodeMirror(firepadRef, editor, {richTextToolbar:false, richTextShortcuts:false});
+                currentID = id;
+                scrollToSection(id);
+              }
+            });
+        }
+      });
     }
   });
 
@@ -364,7 +582,7 @@ function addTranscriptUser() {
   var ref = firebase.database().ref("/transcripts/" + transcriptKey + "/users").push();
   ref.onDisconnect().remove();
   ref.set({
-    id: "placeholder"
+    id: firebase.database.ServerValue.TIMESTAMP
   });
 
 
@@ -374,9 +592,7 @@ function addTranscriptUser() {
   //});
 }
 
-//Need to be aware that the serial creation of listeners may cause distributed
-//issues with a removal being completed before the removal listener is added
-//although SO seems to think this is a non-issue - tested for local changes and does not work
+
 function addTranscriptListener() {
   console.log("adding transcript listener");
   var ref = firebase.database().ref("/transcripts/" + transcriptKey + "/counter");
@@ -465,9 +681,6 @@ function createSectionElement(values){
     sectionElement.append(createSectionHeaderElement(values));
     sectionElement.append(createSectionEditorElement(values));
 
-    // add the listeners for adding new words
-    //addListenersForNewWord(section);
-
     return sectionElement;
 }
 
@@ -476,7 +689,7 @@ function createSectionElement(values){
 // Needs to be set to true as event triggers when the player first loads
 // Could be more lightweight maybe?
 function updatePlayingState(eventData) {
-    console.log("PLAY STATE CHANGED");
+    //console.log("PLAY STATE CHANGED");
     state = eventData.playState;
     if (state == "playing") {
       console.log("Changed to playing");
@@ -524,6 +737,7 @@ function getDuration() {
  */
 function setPlayerTime(time) {
     //player.currentTime = time;
+    console.log("player time set");
     player.seekTo(time);
 }
 
@@ -630,12 +844,7 @@ function addDocumentListeners() {
             var value2 = snapshot.val();
             var numKeys = Object.keys(value2).length;
             var count = 1;
-            console.log("number of keys: ");
-            console.log(numKeys);
-            console.log("value2: ");
-            console.log(value2);
             if(numKeys == 2) {
-              //console.log("2 keys");
               for (key in value2) {
                 if (count == 2) {
                   return value2[key].time;
@@ -648,7 +857,6 @@ function addDocumentListeners() {
             }
 
             else {
-              //console.log("1 key");
               for (key in value2) {
                 return value2[key].time;
               }
@@ -675,7 +883,6 @@ function addDocumentListeners() {
               console.log("value2: ");
               console.log(value2);
               if(numKeys == 2) {
-                //console.log("2 keys");
                 for (key in value2) {
                   if (count == 2) {
                     return value2[key].time;
@@ -687,7 +894,6 @@ function addDocumentListeners() {
               }
 
               else {
-                //console.log("1 key");
                 for (key in value2) {
                   return value2[key].time;
                 }
@@ -702,16 +908,6 @@ function addDocumentListeners() {
     //
     if (event.keyCode == 8 && event.shiftKey) {
       event.preventDefault();
-      /*firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(getPlayerTime()).limitToLast(1)
-      .once("value").then(function(snapshot) {
-        var value = snapshot.val();
-        for(key in value) {
-          return {
-            time: value[key].time,
-            endTime: value[key].endTime
-          };
-        }
-      })*/
       firebase.database().ref("/captions/" + transcriptKey + "/" + currentID).once("value").then(function(snapshot) {
         var value = snapshot.val();
         return {
@@ -778,15 +974,6 @@ function addDocumentListeners() {
         togglePlayPause();
     }
   }, false);
-
-  /* Hiding old collab popup
-  $('.collabno').text(noUsers);
-  $('.unhide.icon')
-    .popup({
-      popup: '.special.popup'
-    });
-  */
-
 }
 
 });
