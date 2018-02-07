@@ -3,7 +3,7 @@
         <div class="item left">
             <h2>Synote</h2>
         </div>
-    
+
         <!-- todo - display points on hover -->
         <a class="item">
               {{userData.email}}
@@ -32,19 +32,22 @@
         </div>
         <div class="eleven wide column">
             <h1>View Transcripts</h1>
-            <div class="ui cards">
+
+
+            <div class="ui cards" ng-repeat="t in transcripts">
                 <div class="card">
                     <div class="content">
                         <div class="header">
-                            <a href="#/editor#-L2ECATL0IGoA4Pj7RlP">Usability and Accessibility Lecture</a>
+                            <a ng-href={{t.href}}>{{t.title}}</a>
                         </div>
-                        <div class="meta">John Doe</div>
+                        <div class="meta">{{t.author}}</div>
                         <div class="description">
-                            Lorem epsom lorem lorem
+                            {{t.desc}}
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </div>

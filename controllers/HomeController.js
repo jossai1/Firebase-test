@@ -6,6 +6,15 @@ angular.module('app').controller("HomeController", function($scope, $rootScope, 
     // });
     $scope.userData;
 
+    $scope.transcripts = [
+
+      {title:"Usability and Accessibility Lecture", author:"John Doe", desc:"Lorem epsom lorem lorem", href:"#/editor#-L2ECATL0IGoA4Pj7RlP"},
+      {title:"Lecture 2 locked", author:"Jane Doe", desc:"Lorem epsom lorem lorem", href:"#/editor#-L4WwFL9lmfeCf1lTCKP"},
+      {title:"Lecture 3", author:"Bon Drain", desc:"Lorem epsom lorem lorem", href:"#/editor#-L48g1dPLTPK2PhsyGLx"},
+
+
+    ];
+
     $scope.displayUsername = function() {
 	    $scope.userData = SharedService.getUserData();
 	    console.log($scope.userData);

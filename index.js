@@ -227,24 +227,34 @@ function initTranscript() {
 
 function loadScript() {
   console.log("Load script called");
-  firebase.database().ref("/captions/" + transcriptKey).once("value")
-    .then(function (snapshot) {
-      return snapshot.val();
-    })
-    .then(function(transcript) {
-      for (caption in transcript) {
-        var current = transcript[caption];
-        var ctime = current.time;
-        makeElements({
-          captionKey: caption,
-          time: ctime
-        });
-      }
-    })
-    .then(timeChangedListener)
-    .then(addTranscriptUser)
-    .then(addTranscriptListener)
-    .then(addDocumentListeners);
+  console.log("checking for a lock");
+  firebase.database().ref('transcripts/' + transcriptKey).once('value').then( function(snapshot) {
+
+    if (snapshot.val().lock === true) {
+      console.log(snapshot.val());
+      alert("Locked transcript. Please check back in a while");
+      window.location.href = "#home";
+    } else {
+      firebase.database().ref("/captions/" + transcriptKey).once("value")
+        .then(function (snapshot) {
+          return snapshot.val();
+        })
+        .then(function(transcript) {
+          for (caption in transcript) {
+            var current = transcript[caption];
+            var ctime = current.time;
+            makeElements({
+              captionKey: caption,
+              time: ctime
+            });
+          }
+        })
+        .then(timeChangedListener)
+        .then(addTranscriptUser)
+        .then(addTranscriptListener)
+        .then(addDocumentListeners);
+    }
+  });
 }
 
 function makeElements(values) {
