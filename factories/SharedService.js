@@ -11,7 +11,7 @@ angular.module('app')
       window.localStorage.setItem("userData",JSON.stringify(data));
     },
     getUserData: function() {
-      console.log("getting data", userData);
+      // console.log("getting data", userData);
       return userData;
     },
     getLocalData: function () {

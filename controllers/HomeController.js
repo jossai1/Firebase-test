@@ -17,7 +17,7 @@ angular.module('app').controller("HomeController", function($scope, $rootScope, 
 
     $scope.displayUsername = function() {
 	    $scope.userData = SharedService.getUserData();
-	    console.log($scope.userData);
+	    // console.log($scope.userData);
     };
 
     $scope.logout = function() {

@@ -16,7 +16,7 @@ angular.module('app').controller("LoginController", function($scope, $rootScope,
 
             firebase.database().ref('users/' + user.uid).on('value', function(snapshot) {
                 $rootScope.currentUser = snapshot.val();
-                console.log(snapshot.val());
+                // console.log(snapshot.val());
                 // if successful route to home
                 SharedService.setUserData(snapshot.val());
                 window.location.href = "#home";
@@ -37,7 +37,7 @@ angular.module('app').controller("LoginController", function($scope, $rootScope,
         var email = $scope.email;
         var password = $scope.password;
 
-        console.log(email);
+        // console.log(email);
         firebase.auth().createUserWithEmailAndPassword($scope.email, $scope.password).then(function() {
             var user = firebase.auth().currentUser;
 

@@ -19,7 +19,7 @@ app.run(['$rootScope', '$location','SharedService', function($rootScope, $locati
             window.location.href = "#";
         } else {
             // alert("ss");
-            console.log(window.localStorage.getItem("userData"));
+            // console.log(window.localStorage.getItem("userData"));
             SharedService.setUserData(JSON.parse(window.localStorage.getItem("userData")));
         }
     });
