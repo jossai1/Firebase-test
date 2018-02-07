@@ -27,16 +27,41 @@
             <div id="controls" class="controls"></div>
           </div>
           <p class="grey" style="font-size: x-small;"> SHIFT + SPACE to PLAY/PAUSE</p>
-          <p class="grey" style="font-size: x-small;"> TAB to EDIT CAPTION  <a ng-click="test()" href="">More Shortcuts</a></p>
+          <p class="grey" style="font-size: x-small;"> TAB to EDIT CAPTION <a ng-click="test()" href="">More Shortcuts</a></p>
           <div class="ui basic modal">
             <div class="ui icon header">
               <i class="Keyboard icon"></i> Keyboard Shortcuts
             </div>
             <div class="ui centered grid content">
-              <p>SHIFT +  BACKSPACE to replay the current caption and pause when it finishes</p>
+
+            <table class="ui very inverted basic table">
+              <thead>
+                <tr>
+                  <th>Keys</th>
+                  <th>Function</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>SHIFT + BACKSPACE</td>
+                  <td>Replay the current caption and pause when it finishes</td>
+                </tr>
+                <tr>
+                  <td>CTRL + SHIFT + LEFT ARROW KEY </td>
+                  <td>Jump to the previous caption</td>
+                </tr>
+                <tr>
+                  <td>CTRL + SHIFT + RIGHT ARROW KEY</td>
+                  <td>Jump to next caption</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+            <!-- <div class="ui centered grid content">
+              <p>SHIFT + BACKSPACE to replay the current caption and pause when it finishes</p>
               <p>CTRL + SHIFT + LEFT ARROW KEY to jump to the previous caption</p>
               <p>CTRL + SHIFT + RIGHT ARROW KEY to jump to next caption</p>
-            </div>
+            </div> -->
             <div class="actions">
               <div class="ui red basic cancel inverted button">
                 <i class="remove icon"></i> Close
@@ -72,14 +97,14 @@
           </div>
         </a>
         <a class="right item">
-            <div class="ui action input">
-                <input style="height:37px" type="text" ng-model="shareUrl">
-                <button class="ui right labeled icon button">
+          <div class="ui action input">
+            <input style="height:37px" type="text" ng-model="shareUrl">
+            <button class="ui right labeled icon button">
                     <i class="group icon"></i> Share URL
                 </button>
-        </div>
+          </div>
         </a>
-    
+
         <!-- <a class="item">
           <i class="undo icon"></i>
         </a>
