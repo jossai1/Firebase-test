@@ -143,7 +143,7 @@ function startDatabase() {
         transcriptKey = ref.push().key;
         window.location.hash = window.location.hash + '#' + transcriptKey;
         //console.log("new window location: " + window.location.split('#')[0] + '#' + transcriptKey);
-        $scope.shareUrl = "http://127.0.0.1:8080/#/editor#" + transcriptKey;
+        $scope.shareUrl = window.location.href;
         $scope.$apply(); //get url to show in input box
         initTranscript();
       }
