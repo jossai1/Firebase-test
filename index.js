@@ -17,6 +17,10 @@ angular.module('app').controller("MainController", function($scope, $rootScope, 
       .modal('show');
   };
 
+  $scope.newCopy =  function () {
+    window.location.href = "#/editor";
+  };
+
 var url = "https://sofo.mediasite.com/Mediasite/Play/d64d7806bcc14f95a3c57633bcfd30c31d";
 var player;
 var controls;

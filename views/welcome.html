@@ -1,28 +1,33 @@
-<br>
-<div class="container" ng-controller="LoginController">
+
+<div class="container welcome-bg" ng-controller="LoginController">
     <div class="jumbotron  middle">
         <div class="ui centered grid">
         	<div class="">
 
 
-            <h1> Synote </h1>
+            <h1 style="color:white"> Synote </h1>
+            <h3 style="color:white;font-weight:100"><em>Your Real-time Collabrative Transcriber!</em></h3>
+            <hr>
+            <br>
             <br>
 
             <!-- input -->
-            <div class="ui input">
+            <div class="ui input welcome-form">
                 <input aria-label="email" ng-model="email" name="email" type="text" placeholder="Email">
             </div>
             <br>
             <br>
-            <div class="ui input">
+            <br>
+            <div class="ui input welcome-form">
                 <input aria-label="password" ng-model="password" type="password" name="password" placeholder="Password">
             </div>
             <br>
             <br>
+            <br>
 
             <!-- buttons -->
-            <button ng-click="login()" class="positive ui button">Login</button>
-            <button class="ui positive basic button" ng-click="register()">Register</button>
+            <button ng-click="login()" class="massive ui teal button">Login</button>
+            <button class="massive ui teal basic button" ng-click="register()">Register</button>
             </div>
 
         </div>

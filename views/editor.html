@@ -34,29 +34,29 @@
             </div>
             <div class="ui centered grid content">
 
-            <table class="ui very inverted basic table">
-              <thead>
-                <tr>
-                  <th>Keys</th>
-                  <th>Function</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>SHIFT + BACKSPACE</td>
-                  <td>Replay the current caption and pause when it finishes</td>
-                </tr>
-                <tr>
-                  <td>CTRL + SHIFT + LEFT ARROW KEY </td>
-                  <td>Jump to the previous caption</td>
-                </tr>
-                <tr>
-                  <td>CTRL + SHIFT + RIGHT ARROW KEY</td>
-                  <td>Jump to next caption</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+              <table class="ui very inverted basic table">
+                <thead>
+                  <tr>
+                    <th>Keys</th>
+                    <th>Function</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>SHIFT + BACKSPACE</td>
+                    <td>Replay the current caption and pause when it finishes</td>
+                  </tr>
+                  <tr>
+                    <td>CTRL + SHIFT + LEFT ARROW KEY </td>
+                    <td>Jump to the previous caption</td>
+                  </tr>
+                  <tr>
+                    <td>CTRL + SHIFT + RIGHT ARROW KEY</td>
+                    <td>Jump to next caption</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <!-- <div class="ui centered grid content">
               <p>SHIFT + BACKSPACE to replay the current caption and pause when it finishes</p>
               <p>CTRL + SHIFT + LEFT ARROW KEY to jump to the previous caption</p>
@@ -95,6 +95,12 @@
             <input type="checkbox" name="example">
             <label>Edit mode</label>
           </div>
+        </a>
+        <a class="item">
+          <button ng-click="newCopy()" tooltip="creates a copy ofthis transcript for you to work on individually or as a group" class="positive ui labeled icon button">
+          <i class="copy icon"></i>
+          Create a New Copy
+        </button>
         </a>
         <a class="right item">
           <div class="ui action input">

@@ -12,14 +12,16 @@ var app = angular.module('app', ["ngRoute"]);
     - we need to do this re-setting because when you refresh the page angular deletes the sharedservice data
 
 */
+
+//: major issues with digest t cycle here - noticesd in console on welcome page - changes location.href to location.replace and the issues was 
 app.run(['$rootScope', '$location','SharedService', function($rootScope, $location,SharedService) {
     $rootScope.$on('$routeChangeStart', function(event, currRoute, prevRoute) {
         if (JSON.parse(window.localStorage.getItem("userData")) === null) {
             // alert("Please Login");
-            window.location.href = "#";
+            window.location.replace = "#";
         } else {
             // alert("ss");
-            // console.log(window.localStorage.getItem("userData"));
+            console.log(window.localStorage.getItem("userData"));
             SharedService.setUserData(JSON.parse(window.localStorage.getItem("userData")));
         }
     });
