@@ -13,7 +13,7 @@ var app = angular.module('app', ["ngRoute"]);
 
 */
 
-//: major issues with digest t cycle here - noticesd in console on welcome page - changes location.href to location.replace and the issues was 
+//: major issues with digest t cycle here - noticesd in console on welcome page - changes location.href to location.replace and the issues seems to go in the welcome page but this lets users who havent logged in access the application
 app.run(['$rootScope', '$location','SharedService', function($rootScope, $location,SharedService) {
     $rootScope.$on('$routeChangeStart', function(event, currRoute, prevRoute) {
         if (JSON.parse(window.localStorage.getItem("userData")) === null) {
@@ -21,7 +21,7 @@ app.run(['$rootScope', '$location','SharedService', function($rootScope, $locati
             window.location.replace = "#";
         } else {
             // alert("ss");
-            console.log(window.localStorage.getItem("userData"));
+            // console.log(window.localStorage.getItem("userData"));
             SharedService.setUserData(JSON.parse(window.localStorage.getItem("userData")));
         }
     });
