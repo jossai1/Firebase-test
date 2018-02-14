@@ -5,9 +5,9 @@
   <a href="#home" class="item">
         <i class="home icon"></i> Home
     </a>
-  <a class="item">
+  <!-- <a class="item">
         {{userData.email}}
-    </a>
+    </a> -->
   <!--  <a class="item">
    Help
  </a>
@@ -99,15 +99,15 @@
         <a class="item">
           <button ng-click="newCopy()" tooltip="creates a copy ofthis transcript for you to work on individually or as a group" class="positive ui labeled icon button">
           <i class="copy icon"></i>
-          Make a copy
+          Make an unedited copy
         </button>
         </a>
         <a class="right item">
           <div class="ui action input">
-            <input style="height:37px" type="text" ng-model="shareUrl">
+            <input style="height:37px;font-size:small" type="text" ng-model="shareUrl">
             <button class="ui right labeled icon button">
                     <i class="group icon"></i> Share URL
-                </button>
+            </button>
           </div>
         </a>
 
