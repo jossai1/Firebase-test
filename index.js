@@ -22,15 +22,15 @@ angular.module('app').controller("MainController", function($scope, $rootScope, 
   };
 
 var url = "https://sofo.mediasite.com/Mediasite/Play/d64d7806bcc14f95a3c57633bcfd30c31d";
-var player;
-var controls;
-var transcriptKey;
-var editor;
+var player;   // The player object
+var controls; // Controls for the player
+var transcriptKey;  // Key for the transcript that is being viewed
+var editor; 
 var currentFirepad;
 var currentID;
 var playKeyDown = false;
 var playing = false;
-var noUsers;
+var noUsers;  // The number of users currently viewing the transcript
 
 //GLOBALS FOR BACKSPACE + SHIFT
 var scheduledStop = false;
@@ -46,7 +46,7 @@ var longestStreak = 0.0;
 var startWatch;
 var endWatch;
 
-//Caption info
+//GLOABLS FOR STORING CAPTION INFORMATION
 var captionStart;
 var captionEnd;
 
@@ -54,40 +54,8 @@ var captionEnd;
 var tcpromise = null;
 var epsilon = 0.5;
 
+// Called when the page loads
 function startFirebase() {
-
-  /* moved this to index.html so firebase is available to to the whole application
-  var config = {
-    apiKey: "AIzaSyC_PcyEemJampMIHiefh94vw9eMpoaYDGI",
-    authDomain: "test-project-96190.firebaseapp.com",
-    databaseURL: "https://test-project-96190.firebaseio.com",
-    projectId: "test-project-96190",
-    storageBucket: "test-project-96190.appspot.com",
-    messagingSenderId: "807025189838"
-  };
-
-  try {
-      firebase.initializeApp(config);
-    } catch (err) {
-      // we skip the "already exists" message which is
-      // not an actual error when we're hot-reloading
-      if (!/already exists/.test(err.message)) {
-        console.error('Firebase initialization error', err.stack)
-      }
-    }
-  var uiConfig = {
-    signInSuccessUrl: '/',
-    signInOptions: [
-      firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-    ],
-    tosUrl: 'google.com'
-  };*/
-
-  //change callback here
-  //var ui = new firebaseui.auth.AuthUI(firebase.auth());
-  //ui.start('#auth-container', uiConfig);
-  //ui.delete(); //delete ui or it will cause an error
-  //initializeCodeMirror();
   $('.ui.checkbox').checkbox({
     onChecked: function () {editing = true;},
     onUnchecked: function () {editing = false;}
@@ -95,6 +63,9 @@ function startFirebase() {
   getPlayerReference(startDatabase);
 }
 
+/**
+* Initialises a codemirror text editor
+*/
 function initializeCodeMirror() {
   editor = CodeMirror(document.getElementById("current-caption"), {linewrapping: true});
   editor.setOption("extraKeys", {
@@ -111,6 +82,10 @@ function initializeCodeMirror() {
   })
 }
 
+/**
+* Sets up the Mediasite Player
+* @param callback A callback function you want called when the player is ready
+*/
 function getPlayerReference(callback) {
   console.log("Getting player reference");
   player = new Mediasite.Player( "player",
@@ -128,6 +103,7 @@ function getPlayerReference(callback) {
     });
 }
 
+// Updates the address bar with the transcript key and either loads the transcript or creates an entirely new one
 function startDatabase() {
   var hash = window.location.hash.replace(/#/g, '');
   console.log("hash: " + hash);
@@ -143,7 +119,6 @@ function startDatabase() {
       }
 
       else {
-        console.log("in first else");
         transcriptKey = ref.push().key;
         window.location.hash = window.location.hash + '#' + transcriptKey;
         //console.log("new window location: " + window.location.split('#')[0] + '#' + transcriptKey);
@@ -176,13 +151,17 @@ function checkExistence(dataRef) {
   });
 }
 
-
+/**
+* Moves the scroll pane to the element representing a given captions
+* @param key The id of the caption you want to scroll to
+*/
 function scrollToSection(key) {
   $('#firepad-container').scrollTop(
     $('#'+key).offset().top - $('#firepad-container').offset().top + $('#firepad-container').scrollTop()
   );
 }
 
+// Creates a brand new transcript in Firebase
 function initTranscript() {
   console.log("init transcript called");
   //Returns a promise
@@ -229,6 +208,9 @@ function initTranscript() {
   .then(setUpCounter)
 }
 
+/*
+* Loads a transcript which already exists and sets up listeners
+*/
 function loadScript() {
   console.log("Load script called");
   console.log("checking for a lock");
@@ -261,6 +243,9 @@ function loadScript() {
   });
 }
 
+/** Creates all the elements for a caption objects
+* @param values An object specifying properties of the caption
+*/
 function makeElements(values) {
   //console.log("making element");
   var container = $("#firepad-container");
@@ -268,115 +253,10 @@ function makeElements(values) {
   container.append(sectionElement);
 }
 
+// Adds an event handler to the Mediasite player which tracks the current caption so the text editor can be updated.
+// Also tracks the watch time of each caption of each caption by each user and is responsible for autoscrolling.
 function timeChangedListener() {
-  /*player.addHandler("currenttimechanged", function(event) {
-
-    //Set up promise chanining here so that time events are received in chronological order!!!
-    if (tcpromise === null) {
-      //console.log("time changed event");
-      console.log("current time changed to: " + event.currentTime);
-      epsilon = 0.5;
-
-      if(startBarrier > player.getCurrentTime()) {
-        if (tEventID !== undefined) {
-          player.removeTimedEvent(tEventID);
-        }
-        stopMade = false;
-      }
-
-      else if(scheduledTime + epsilon < player.getCurrentTime()) {
-        if (tEventID !== undefined) {
-          player.removeTimedEvent(tEventID);
-        }
-        stopMade = false;
-      }
-
-
-      if (!stopMade) {
-        var id;
-        firebase.database().ref("/captions/" + transcriptKey).orderByChild("time").endAt(event.currentTime).limitToLast(1).once("value")
-          .then(function(snapshot) {
-            console.log("executing promise for: " + event.currentTime);
-            for (keys in snapshot.val()) {
-              id = keys;
-            }
-
-            if(startWatch === undefined) {
-              startWatch = event.currentTime;
-              endWatch = event.currentTime;
-            }
-
-            if (event.currentTime >= endWatch && event.currentTime <= endWatch + epsilon) {
-              endWatch = event.currentTime;
-              streak = endWatch - startWatch;
-              if(streak > longestStreak) {
-                longestStreak = streak;
-              }
-            }
-
-            else {
-              console.log("resetting timer");
-              console.log("current time is: " + event.currentTime);
-              console.log("endWatch: " +  endWatch);
-              startWatch = event.currentTime
-              endWatch = event.currentTime;
-            }
-
-            if(id != null && id != currentID) {
-              var firepadRef = firebase.database().ref("/firepads/" + transcriptKey + "/" + id);
-
-              if(currentFirepad) {
-                currentFirepad.dispose();
-                editor.setValue("");
-                editor.clearHistory();
-                var cmelement = document.getElementsByClassName('CodeMirror')[0];
-                var ccelement = document.getElementById("current-caption");
-                ccelement.removeChild(cmelement);
-              }
-
-              if(currentID !== undefined) {
-                //console.log("checking streak is longest for " + currentID);
-                //console.log("longest streak: " + longestStreak);
-                //console.log("perfect streak is: " + (captionEnd - captionStart));
-                if (longestStreak > 0.8*(captionEnd - captionStart)) {
-                  firebase.database().ref("/watchInfo/" + transcriptKey + "/" + currentID + "/" + firebase.auth().currentUser.uid)
-                  .set(firebase.database.ServerValue.TIMESTAMP);
-                }
-              }
-
-              caption = snapshot.val();
-              //for(keys in caption) {
-                //console.log(keys);
-              //};
-              captionStart = caption[id].time;
-              captionEnd = caption[id].endTime;
-              startWatch = event.currentTime;
-              endWatch = event.currentTime;
-              longestStreak = 0.0;
-              //console.log("captionStart: " + captionStart);
-              //console.log("start watch: " + startWatch);
-              //console.log("captionEnd: " + captionEnd);
-              //console.log("end watch: " + endWatch);
-
-              initializeCodeMirror();
-              currentFirepad = Firepad.fromCodeMirror(firepadRef, editor, {richTextToolbar:false, richTextShortcuts:false});
-              currentID = id;
-              scrollToSection(id);
-            }
-          });
-      }
-    }
-
-    else {
-      tcpromise.then(function () {
-
-      });
-    }
-
-  });*/
-
   player.addHandler("currenttimechanged", function(event) {
-    console.log("ACTUAL ORDER: " + event.currentTime);
     if (tcpromise === null) {
       //console.log("Initialising promise");
       tcpromise = new Promise(function(resolve, reject) {
@@ -517,9 +397,9 @@ function timeChangedListener() {
               }
 
               else {
-                console.log("resetting timer");
-                console.log("current time is: " + event.currentTime);
-                console.log("endWatch: " +  endWatch);
+                //console.log("resetting timer");
+                //console.log("current time is: " + event.currentTime);
+                //console.log("endWatch: " +  endWatch);
                 startWatch = event.currentTime
                 endWatch = event.currentTime;
               }
@@ -537,9 +417,9 @@ function timeChangedListener() {
                 }
 
                 if(currentID !== undefined) {
-                  console.log("checking streak is longest for " + currentID);
-                  console.log("longest streak: " + longestStreak);
-                  console.log("perfect streak is: " + (captionEnd - captionStart));
+                  //console.log("checking streak is longest for " + currentID);
+                  //console.log("longest streak: " + longestStreak);
+                  //console.log("perfect streak is: " + (captionEnd - captionStart));
                   if (longestStreak > 0.8*(captionEnd - captionStart) && editing) {
                     firebase.database().ref("/watchInfo/" + transcriptKey + "/" + currentID + "/" + firebase.auth().currentUser.uid)
                     .set(firebase.database.ServerValue.TIMESTAMP);
@@ -547,14 +427,12 @@ function timeChangedListener() {
                 }
 
                 caption = snapshot.val();
-                //for(keys in caption) {
-                  //console.log(keys);
-                //};
                 captionStart = caption[id].time;
                 captionEnd = caption[id].endTime;
                 startWatch = event.currentTime;
                 endWatch = event.currentTime;
                 longestStreak = 0.0;
+
                 //console.log("captionStart: " + captionStart);
                 //console.log("start watch: " + startWatch);
                 //console.log("captionEnd: " + captionEnd);
@@ -582,7 +460,10 @@ function timeChangedListener() {
   });
 }
 
-//Not used as can't pass transcript to onDisconnect
+/*
+  Increments the counter that keeps track of the number of users viewing a transcript.
+  NOT IN USE: Cannot start transactions when a user disconnects, thus we cannot use this function.
+*/
 function incrementUserCount(number) {
   var ref = firebase.database().ref("/transcripts/" + transcriptKey + "/counter");
   ref.transaction(function(count) {
@@ -591,10 +472,12 @@ function incrementUserCount(number) {
   });
 }
 
+// Initialises the counter that keeps track of the number of users for a newly created transcript
 function setUpCounter() {
   return firebase.database().ref("/transcripts/" + transcriptKey + "/counter").set(0);
 }
 
+// Adds a new user to the list of users for the transcript
 function addTranscriptUser() {
   console.log("Adding transcript user");
 
@@ -603,21 +486,17 @@ function addTranscriptUser() {
   ref.set({
     id: firebase.database.ServerValue.TIMESTAMP
   });
-
-
-  //Local test
-  //var testDummy = firebase.database().ref("/transcripts/" + transcriptKey + "/dummy").set({
-    //id: "placeholder"
-  //});
 }
 
-
+// Adds the listener which keeps track of the number of collaborators
 function addTranscriptListener() {
-  console.log("adding transcript listener");
+  //console.log("adding transcript listener");
   var ref = firebase.database().ref("/transcripts/" + transcriptKey + "/counter");
-  console.log("at on operations");
+  //console.log("at on operations");
+
   //Test removal...
   //firebase.database().ref("/transcripts" + transcriptKey + "/dummy").remove();
+
   ref.on("value", function(count) {
     console.log("Current number of users: " + count.val());
     noUsers = count.val();
@@ -646,10 +525,9 @@ function formatStartTime(startTime) {
 
 /**
  * Create the start time label
- * @param section a section object
+ * @param time The time of the caption
  */
 function createSectionTimeStampElement(time) {
-    //var sectionTimestampElement = $('<input type="text" size="12" maxlength="16" class="section-timestamp" value="' + formatStartTime(section.startTime) + '" />'); - to enable editing remove the disabled property HERE
     var sectionTimestampElement = $('<div class="ui top left attached label"><input class="label-formatting" placeholder="Speaker" type="text" size="10" maxlength="16" class="section-timestamp" value="' + formatStartTime(time) + '" disabled /></div>');
     sectionTimestampElement.click(function() {
       setPlayerTime(time);
@@ -660,8 +538,9 @@ function createSectionTimeStampElement(time) {
 }
 
 /**
- * Given a section object create the word elements, add to the editor
- * @param section a section object
+ * Creates the text element for a caption text and adds a listener that listens for updates to the caption text
+ * @param values An object containing the key of target caption
+ * @returns The element which contains the caption text
  */
 function createSectionEditorElement(values) {
     //var sectionEditorElement = $('<div contentEditable="true" class="section-editor our-form-control"></div>');
@@ -685,8 +564,9 @@ function createSectionEditorElement(values) {
 }
 
 /**
- * Add a section element with all the words and the editor etc. our main function
- * @param section A real time section object
+ * Create a new element containing the caption described by the values object
+ * @param values An object describing the caption by its key and its timestamp
+ * @returns The element for the caption
  */
 function createSectionElement(values){
 
@@ -703,12 +583,11 @@ function createSectionElement(values){
     return sectionElement;
 }
 
-// Needs to be set to true as event triggers when the player first loads
-// Could be more lightweight maybe?
-// Needs to be set to true as event triggers when the player first loads
-// Could be more lightweight maybe?
+/**
+ * Keeps track of the Media Player play state
+ * @param eventData A Mediasite player event
+ */
 function updatePlayingState(eventData) {
-    //console.log("PLAY STATE CHANGED");
     state = eventData.playState;
     if (state == "playing") {
       console.log("Changed to playing");
@@ -721,6 +600,9 @@ function updatePlayingState(eventData) {
     }
 }
 
+/*
+* Toggles the playing state of the Mediasite player
+*/
 function togglePlayPause() {
     if(playing) {
         player.pause();
@@ -752,7 +634,7 @@ function getDuration() {
 /**
  * Set the player to the provided time in seconds
  *
- * @param time start-time in seconds
+ * @param time start time in seconds
  */
 function setPlayerTime(time) {
     //player.currentTime = time;
@@ -804,6 +686,7 @@ function hmsToSeconds(timestamp) {
     }
 }
 
+// Adds key listeners to the transcript editor
 function addDocumentListeners() {
   document.addEventListener("keydown", function (event) {
     if (event.keyCode == 37 && event.shiftKey) {
@@ -897,10 +780,6 @@ function addDocumentListeners() {
               var value2 = snapshot.val();
               var numKeys = Object.keys(value2).length;
               var count = 1;
-              console.log("number of keys: ");
-              console.log(numKeys);
-              console.log("value2: ");
-              console.log(value2);
               if(numKeys == 2) {
                 for (key in value2) {
                   if (count == 2) {
@@ -987,7 +866,7 @@ function addDocumentListeners() {
     }, false);
 
   document.addEventListener('keyup', function(event) {
-    //f9 key released will pause audio
+    //F9 key released will pause audio
     if(event.keyCode === 120 && playKeyDown) {
         playKeyDown = false;
         togglePlayPause();

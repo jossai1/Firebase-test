@@ -1,11 +1,10 @@
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
 
+/* Creates Firebase cloud functions which runs locally on the Firebase server instead of the client machine
+*  As of now there is only one cloud function which updates the user count for a given transcript in the Firebase database
+*/
 const functions  = require('firebase-functions');
 const admin = require('firebase-admin');
 
