@@ -25,9 +25,9 @@ var url = "https://sofo.mediasite.com/Mediasite/Play/d64d7806bcc14f95a3c57633bcf
 var player;   // The player object
 var controls; // Controls for the player
 var transcriptKey;  // Key for the transcript that is being viewed
-var editor; 
-var currentFirepad;
-var currentID;
+var editor;   //The codemirror text editor
+var currentFirepad; //The Firepad object for the text editor
+var currentID;    //The id of the current caption being played
 var playKeyDown = false;
 var playing = false;
 var noUsers;  // The number of users currently viewing the transcript
@@ -56,10 +56,12 @@ var epsilon = 0.5;
 
 // Called when the page loads
 function startFirebase() {
+  // Sets up the checkbox which checks whether a user is editing a transcirpt or just viewing it
   $('.ui.checkbox').checkbox({
     onChecked: function () {editing = true;},
     onUnchecked: function () {editing = false;}
   });
+  // Create the player and then start the firebase related intiailization once the player is ready
   getPlayerReference(startDatabase);
 }
 
@@ -67,16 +69,20 @@ function startFirebase() {
 * Initialises a codemirror text editor
 */
 function initializeCodeMirror() {
+  // Create the codemirror editor
   editor = CodeMirror(document.getElementById("current-caption"), {linewrapping: true});
+  // Ensure that pressing SHIFT+Backspace in the editor does not move the cursor backwards and delete a character
   editor.setOption("extraKeys", {
     "Shift-Backspace": function(cm) {}
   });
 
+  // When a user clicks into the text editor they are marked as editing and the editing checkbox is checked
   editor.on("focus", function(event) {
     $('#checkboi').checkbox('check');
     $('#checkboi').checkbox('disable');
   });
 
+  // Enables the checkbox when the user leaves the text editor
   editor.on("blur", function(event) {
     $('#checkboi').checkbox('enable');
   })
@@ -88,6 +94,8 @@ function initializeCodeMirror() {
 */
 function getPlayerReference(callback) {
   console.log("Getting player reference");
+
+  // Create the player
   player = new Mediasite.Player( "player",
     {
       url: url + (url.indexOf("?") == -1 ? "?" : "&") + "player=MediasiteIntegration",
@@ -97,6 +105,7 @@ function getPlayerReference(callback) {
               }
     });
 
+    // Create the controls
   controls = new Mediasite.PlayerControls(player, "controls",
     {
       imageSprite: "url(MediasitePlayerControls.png)"
@@ -110,6 +119,7 @@ function startDatabase() {
   //angular router has hash in url  already so add this check instaed
   if(hash !== "/editor") {
     var ref = firebase.database().ref("/captions/");
+    // If the transcript already exists then load it
     checkExistence(ref.child(hash.split("editor")[1])).then(function(exists) {
       if (exists) {
         transcriptKey = hash.split("editor")[1];
@@ -118,6 +128,7 @@ function startDatabase() {
         loadScript();
       }
 
+      //Otherwise create a new transcript
       else {
         transcriptKey = ref.push().key;
         window.location.hash = window.location.hash + '#' + transcriptKey;
@@ -128,10 +139,12 @@ function startDatabase() {
       }
     });
 
+    //Replace the ready handler in the MediaSite player with this function call
     player.removeHandler("ready", this);
-    console.log("handler removed");
+    //console.log("handler removed");
   }
 
+  // If no transcript key is provided in the hash then create a new transcript (same as the else clause above)
   else {
     transcriptKey = firebase.database().ref("/captions/").push().key;
     window.location.hash = window.location.hash + "#" + transcriptKey;
@@ -144,7 +157,9 @@ function startDatabase() {
   }
 }
 
-//Returns a promise to check the existence of a given transcript
+/** Returns a promise to check the existence of a given transcript
+* @param dataRef The firebase reference for the transcript to be checked
+*/
 function checkExistence(dataRef) {
   return dataRef.once('value').then(function(snapshot) {
     return (snapshot.val() !== null);
@@ -152,7 +167,7 @@ function checkExistence(dataRef) {
 }
 
 /**
-* Moves the scroll pane to the element representing a given captions
+* Moves the scroll pane to the element representing a given caption
 * @param key The id of the caption you want to scroll to
 */
 function scrollToSection(key) {
@@ -163,8 +178,9 @@ function scrollToSection(key) {
 
 // Creates a brand new transcript in Firebase
 function initTranscript() {
-  console.log("init transcript called");
-  //Returns a promise
+  //console.log("init transcript called");
+
+  //Creates a caption on Firebase - returns a promise
   var createCaption = function(caption) {
     //console.log("in creating caption");
     var ref = firebase.database().ref("/captions/" + transcriptKey).push()
@@ -184,6 +200,7 @@ function initTranscript() {
     });
   };
 
+  // Adds a firepad object to firebase
   var addFireRef = function(values) {
     //console.log("Adding firepad reference");
     var ref = firebase.database().ref("/firepads/" + transcriptKey + "/" + values.captionKey);
@@ -194,16 +211,21 @@ function initTranscript() {
     });
   };
 
+  // Create a collection of promises
   var promiseArr = [];
+  // Get all the captions for the video being played
   var captions = player.getCaptions();
+  // Remove the first caption (as this is always an empty strign starting at 0)
   captions = captions.slice(1);
 
+  // For each caption create a caption object in Firebase and store the promises that are returned in an array
   for(var i = 0; i < captions.length; i++) {
     var caption = captions[i];
     var promise = createCaption(caption).then(addFireRef);
     promiseArr.push(promise);
   }
 
+  // Only when all captions have been created move to the next phase (adding a counter for the number of users)
   Promise.all(promiseArr)
   .then(setUpCounter)
 }
@@ -212,19 +234,21 @@ function initTranscript() {
 * Loads a transcript which already exists and sets up listeners
 */
 function loadScript() {
-  console.log("Load script called");
-  console.log("checking for a lock");
+  // console.log("Load script called");
+  // console.log("checking for a lock");
   firebase.database().ref('transcripts/' + transcriptKey).once('value').then( function(snapshot) {
-
+    // If the file is locked redirect the user away from the transcript
     if (snapshot.val().lock === true) {
       console.log(snapshot.val());
       alert("Locked transcript. Please check back in a while");
       window.location.href = "#home";
     } else {
+      //Otherwise read the transcript from Firebase
       firebase.database().ref("/captions/" + transcriptKey).once("value")
         .then(function (snapshot) {
           return snapshot.val();
         })
+        // Go through each caption and create HTML elements for it
         .then(function(transcript) {
           for (caption in transcript) {
             var current = transcript[caption];
@@ -235,6 +259,7 @@ function loadScript() {
             });
           }
         })
+        //Then add listeners
         .then(timeChangedListener)
         .then(addTranscriptUser)
         .then(addTranscriptListener)
@@ -243,7 +268,7 @@ function loadScript() {
   });
 }
 
-/** Creates all the elements for a caption objects
+/** Creates all the HTML elements for a caption object
 * @param values An object specifying properties of the caption
 */
 function makeElements(values) {
@@ -254,7 +279,7 @@ function makeElements(values) {
 }
 
 // Adds an event handler to the Mediasite player which tracks the current caption so the text editor can be updated.
-// Also tracks the watch time of each caption of each caption by each user and is responsible for autoscrolling.
+// Also tracks the watch time of each caption by each user and is responsible for autoscrolling.
 function timeChangedListener() {
   player.addHandler("currenttimechanged", function(event) {
     if (tcpromise === null) {
@@ -274,7 +299,6 @@ function timeChangedListener() {
           }
           stopMade = false;
         }
-        //console.log("first part of initial promise has finished");
         resolve();
       }).then(function () {
         //console.log("In second part of initial promise");
@@ -449,6 +473,7 @@ function timeChangedListener() {
     }
   });
 
+  // When a user is replaying a caption, at the end of the replay, pause the player
   player.addHandler("timedeventreached", function(event) {
     if(playing) {
       togglePlayPause();
@@ -482,6 +507,7 @@ function addTranscriptUser() {
   console.log("Adding transcript user");
 
   var ref = firebase.database().ref("/transcripts/" + transcriptKey + "/users").push();
+  // If the user disconnects from firebase, then remove them
   ref.onDisconnect().remove();
   ref.set({
     id: firebase.database.ServerValue.TIMESTAMP
@@ -507,8 +533,8 @@ function addTranscriptListener() {
 
 
 /**
- * Given a section object create the section header element
- * @param section A section object
+ * Given a caption, create the a header element for it
+ * @param values An objectd escribing the caption
  */
 function createSectionHeaderElement(values) {
     var sectionHeaderElement = $('<div class="section-header"></div>');
@@ -524,16 +550,14 @@ function formatStartTime(startTime) {
 }
 
 /**
- * Create the start time label
+ * Create the start time label for a caption
  * @param time The time of the caption
  */
 function createSectionTimeStampElement(time) {
     var sectionTimestampElement = $('<div class="ui top left attached label"><input class="label-formatting" placeholder="Speaker" type="text" size="10" maxlength="16" class="section-timestamp" value="' + formatStartTime(time) + '" disabled /></div>');
     sectionTimestampElement.click(function() {
       setPlayerTime(time);
-      //console.log("click");
     });
-    //var sectionTimestampElement = $("<div class='ui top left attached label'>"+time+"</div>");
     return sectionTimestampElement;
 }
 
@@ -543,13 +567,12 @@ function createSectionTimeStampElement(time) {
  * @returns The element which contains the caption text
  */
 function createSectionEditorElement(values) {
-    //var sectionEditorElement = $('<div contentEditable="true" class="section-editor our-form-control"></div>');
 
     var sectionEditorElement = $('<div class="description" contentEditable="false"></div>');
-    //var sectionEditorElement = $('<div class="description" contentEditable="false"></div>');
     var spanElement = $('<p style="margin-top: 4%;margin-left: 2%;margin-bottom: 1%;"></p>');
     sectionEditorElement.append(spanElement);
 
+    // Update the caption text whenever a user edits the caption (ie whenever it changes on firebase)
     firebase.database().ref("/firepads/" + transcriptKey + "/" + values.captionKey + "/history").on(
       "child_added", function(history) {
         //console.log("caption key " +  values.captionKey);
@@ -570,13 +593,14 @@ function createSectionEditorElement(values) {
  */
 function createSectionElement(values){
 
-    // create a section element for this section object
-    //var sectionElement = $('<div class="section"></div>');
+    // Create a section element for the caption described by values
     var sectionElement = $('<div class="ui card"><div class="content"></div></div>');
     //var sectionElement = $('<div class="content"></div>');
 
+    // Mark the element with the properties of the caption given by values
     sectionElement.attr('id', values.captionKey);
     sectionElement.attr('time', values.time);
+    // Add a header and a text element to the caption element and return it
     sectionElement.append(createSectionHeaderElement(values));
     sectionElement.append(createSectionEditorElement(values));
 
@@ -584,7 +608,7 @@ function createSectionElement(values){
 }
 
 /**
- * Keeps track of the Media Player play state
+ * Keeps track of whether the Mediasite Player is playing or not
  * @param eventData A Mediasite player event
  */
 function updatePlayingState(eventData) {
