@@ -15,9 +15,7 @@ This guide goes through how to deploy an app to Heroku via Github, it’s a simp
 
 -  Manual deploy
 	- Select the branch you’d like to deploy from
-![alt text](https://s3.amazonaws.com/heroku-devcenter-files/article-images/2349-imported-1443570589-2349-imported-1443555058-422-original.jpg "manual")
 
 -  Automatic deploys can also be set up for any branch.
-![alt text](https://s3.amazonaws.com/heroku-devcenter-files/article-images/2349-imported-1443570589-2349-imported-1443555058-423-original.jpg "Logo Title Text 1")
 
 - visit the URL provided in the log to view your deployed app 
